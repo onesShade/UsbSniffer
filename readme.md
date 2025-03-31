@@ -14,10 +14,10 @@ A comprehensive USB device detection and testing utility with real-time monitori
 ### Dependencies
 - Ncurses library
 - GCC compiler
-- Linux kernel (with sysfs)
+- Linux kernel
 
 ```bash
-sudo dnf install ncurses-devel 
+sudo dnf gcc install ncurses-devel 
 
 git clone https://github.com/onesShade/UsbSniffer.git
 cd UsbSniffer
