@@ -69,7 +69,6 @@ int print_storage_device_info() {
         break;
     }
 
-    if(!strlen(ent->d_name)) return 0;
     snprintf(path, sizeof(path), "%s/%s", path_other, ent->d_name);
 
     if (!open_dir(&dir, path)) { 
@@ -137,9 +136,10 @@ int print_storage_device_info() {
         mvwprintw(right_win, il_info.curr_y++, 1, "Max Power: %s\n", buffer);
     }
     if (dir) closedir(dir);
+    return 1;
 }
 
-void get_mount_points(const char* device_name) {
+void get_mount_points() {
     char buffer[MAX_READ];
     char path_name[MAX_READ];
     char path_mount[MAX_READ];
@@ -153,7 +153,8 @@ void get_mount_points(const char* device_name) {
 
     char mounted = 0;
     while (fgets(buffer, sizeof(buffer), mounts)) {
-        buffer[strcspn(buffer, "\n")] = 0;
+        if ((strcspn(buffer, "\n") < strlen(buffer)))
+            buffer[strcspn(buffer, "\n")] = 0;
 
         if (strstr(buffer, cursor.block_name) != NULL) {
             sscanf(buffer, "%s%s", &path_name, &path_mount);
@@ -172,9 +173,6 @@ void draw_right_window() {
     werase(right_win);
     il_info.curr_y = WIDOW_TOP_PADDING;
 
-    char path[PATH_MAX];
-    char buffer[MAX_READ];
-    
     const Atr_Print_arg args[] = {
         {"idVendor", "Vendor ID", NULL},
         {"idProduct", "Product ID", NULL},
@@ -300,8 +298,7 @@ int main() {
     cursor.mount_path[0] = 0;
     while (1) {
         int key = getch();
-        if (key == 'q') break;  
-        if (key == 274) break;  //F10
+        if (key == 'q' || key == 274) break;  //F10
         update(key);
 
         refresh();
