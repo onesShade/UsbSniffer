@@ -28,5 +28,4 @@ make
 ```bash
 cd bin
 ./app
-make
 ```
