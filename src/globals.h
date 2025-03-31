@@ -38,4 +38,8 @@ typedef struct {
     const char *print_postfix;
 } Atr_Print_arg;
 
+void init_globals();
+void reinit_windows();
+
+void free_globals();
 #endif

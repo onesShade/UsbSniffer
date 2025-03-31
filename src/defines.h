@@ -8,3 +8,5 @@
 #define SELECTED_TEXT_COLOR 1
 #define TEST_FILE_NAME "storage_test.bin"
 #define LOG_FILE "app.log"
+#define MAIN_LOOP_SLEEP_TIME_MS 50
+#define HOTPLUG_SLEEP_MS 2000

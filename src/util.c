@@ -17,10 +17,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <ncurses.h>
 
 #include "defines.h"
 
-void log_init() {
+void init_log() {
     unlink(LOG_FILE);
     log_message("Program started");
 }
@@ -131,4 +132,13 @@ int is_storage_device(const char *devpath) {
         if (dir) closedir(dir);
     }
     return 0;    
+}
+
+void init_ncurses() {
+    initscr();        
+    cbreak();           
+    noecho();           
+    keypad(stdscr, TRUE); 
+    nodelay(stdscr, TRUE); 
+    curs_set(0);
 }

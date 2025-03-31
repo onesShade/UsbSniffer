@@ -15,8 +15,7 @@
 #include "storageTest.h"
 #include "util.h"
 #include "defines.h"
-
-#include"globals.h"
+#include "globals.h"
 
 void print_attribute_value(const Atr_Print_arg arg, int y, WINDOW *win) {
     char path[PATH_MAX];
@@ -243,7 +242,7 @@ void draw_left_window() {
     wrefresh(left_win);
 
     if (dl_info.len && i > dl_info.len) {
-        msleep(2000);
+        msleep(HOTPLUG_SLEEP_MS);
     }
     dl_info.len = i;
 }
@@ -265,12 +264,7 @@ void update(int key) {
         refresh();
         clear();
         resize_term(0, 0);
-        werase(left_win);
-        werase(right_win);
-        werase(bottom_win);
-        left_win = newwin(LINES - 2, COLS / 2, 1, 0);
-        right_win = newwin(LINES - 2, COLS / 2, 1, COLS / 2);
-        bottom_win = newwin(1, COLS, LINES - 1, 1);
+        reinit_windows();
     }
     if (key == KEY_DOWN && cursor.y <= dl_info.len + WIDOW_TOP_PADDING) {
         if (cursor.y == dl_info.len + WIDOW_TOP_PADDING - 1) 
@@ -280,7 +274,6 @@ void update(int key) {
         cursor.mount_path[0] = 0;
     }
     if (key == KEY_UP && cursor.y >= WIDOW_TOP_PADDING) {
-        
         if(cursor.y == WIDOW_TOP_PADDING)
             cursor.y = dl_info.len + WIDOW_TOP_PADDING - 1;
         else
@@ -288,27 +281,19 @@ void update(int key) {
         cursor.mount_path[0] = 0;
     }
 
-    if(key == 266 && is_storage_device(cursor.device_name)) {//F2
+    if(key == 266 && is_storage_device(cursor.device_name)) {   //F2
         test_storage(cursor.mount_path, 100);
     }
 
-    if(cursor.y > dl_info.len + WIDOW_TOP_PADDING - 1 && cursor.y > WIDOW_TOP_PADDING)
+    if(cursor.y > dl_info.len + WIDOW_TOP_PADDING - 1 && cursor.y > WIDOW_TOP_PADDING) {
         cursor.y--;
+    }
 }
 
 int main() {
-    log_init();
-    
-    initscr();        
-    cbreak();           
-    noecho();           
-    keypad(stdscr, TRUE); 
-    nodelay(stdscr, TRUE); 
-    curs_set(0);
-
-    left_win = newwin(LINES - 2, COLS / 2, 1, 0);
-    right_win = newwin(LINES - 2, COLS / 2, 1, COLS / 2);
-    bottom_win = newwin(1, COLS, LINES - 1, 1);
+    init_log();
+    init_ncurses();
+    init_globals();
 
     cursor.window = device_list;
     cursor.y = WIDOW_TOP_PADDING;
@@ -326,11 +311,8 @@ int main() {
         draw_right_window();
         draw_bottom_window();
 
-        msleep(50);
+        msleep(MAIN_LOOP_SLEEP_TIME_MS);
     }
-    delwin(left_win);
-    delwin(right_win);
-    delwin(bottom_win);
-    endwin();  
+    free_globals();
     return 0;
 }

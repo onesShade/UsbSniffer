@@ -4,7 +4,9 @@
 #include <dirent.h>
 #include <stddef.h>
 
-void log_init();
+void init_log();
+void init_ncurses();
+
 void log_message(const char *format, ...);
 void msleep(int milliseconds);
 void read_usb_attribute(const char *path, char *buffer, size_t size);
