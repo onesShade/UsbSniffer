@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 199309L 
+#define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +11,7 @@
 #include <time.h>
 #include <errno.h>
 #include <ncurses.h>
+#include <string.h>
 
 #include "storageTest.h"
 #include "util.h"
@@ -153,7 +154,7 @@ void get_mount_points() {
 
     char mounted = 0;
     while (fgets(buffer, sizeof(buffer), mounts)) {
-        if ((strcspn(buffer, "\n") < strlen(buffer)))
+        if ((strcspn(buffer, "\n") < strnlen(buffer, MAX_READ)))
             buffer[strcspn(buffer, "\n")] = 0;
 
         if (strstr(buffer, cursor.block_name) != NULL) {
