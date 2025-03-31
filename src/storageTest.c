@@ -15,7 +15,8 @@
 #include <errno.h>
 #include <ncurses.h>
 
-#define TEST_FILE_NAME "storage_test.bin"
+#include "defines.h"
+
 void test_storage(const char *mount_point, int size_mb) {
     char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s/%s", mount_point, TEST_FILE_NAME);

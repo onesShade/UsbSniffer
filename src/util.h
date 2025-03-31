@@ -1,13 +1,15 @@
 #ifndef UTIL
 #define UTIL
 
+#include <dirent.h>
 #include <stddef.h>
-
-#define LOG_FILE "app.log"
 
 void log_init();
 void log_message(const char *format, ...);
 void msleep(int milliseconds);
-void read_file_content(const char *path, char *buffer, size_t size);
+void read_usb_attribute(const char *path, char *buffer, size_t size);
+int open_dir(DIR **dir, const char *path);
+int is_usb_device(const char *name);
+int is_storage_device(const char *devpath);
 
 #endif
