@@ -2,6 +2,7 @@
 
 #include "util.h"
 
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
@@ -11,7 +12,6 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -78,7 +78,7 @@ int filter_regular_entries(const char *name, const void *unused) {
     return name[0] != '.';
 }
 
-int find_first_matching_entry(const char* path, FindEntryArg arg, char *result_path) {
+int find_first_matching_entry(const char* path, const FindEntryArg arg, char *result_path) {
 
     DIR* dir = opendir(path);
     if (!dir) {
@@ -102,21 +102,40 @@ int find_first_matching_entry(const char* path, FindEntryArg arg, char *result_p
 
 int traverse_path(const char *base_path,
     FindEntryArg* arg_array,
-    int filters_count,
     char *final_path) {
         
     char current_path[PATH_MAX];
+    char temp_path[PATH_MAX];
     strncpy(current_path, base_path, PATH_MAX);
 
-    for (int i = 0; i < filters_count; i++) {
+    for (int i = 0; arg_array[i].filter_fun; i++) {
+        #ifdef DEBUG
+        log_message("%s", current_path);
+        #endif
+
         char next_entry[PATH_MAX];
         if (!find_first_matching_entry(current_path, arg_array[i], next_entry)) {
             return 0;
         }
 
-        snprintf(current_path, PATH_MAX, "%s/%s", current_path, next_entry);
+        snprintf(temp_path, PATH_MAX, "%s/%s", current_path, next_entry);
+        strncpy(current_path, temp_path, PATH_MAX);
     }
 
     strncpy(final_path, current_path, PATH_MAX);
     return 1;
+}
+
+void extract_top_dir(const char *path, char *output) {
+    if (!path || !output) return;
+
+    const char *last_slash = strrchr(path, '/');
+    
+    if (!last_slash) {
+        // No slashes found, assume the entire path is the top dir
+        strncpy(output, path, PATH_MAX);
+    } else {
+        // Copy everything after the last '/'
+        strncpy(output, last_slash + 1, PATH_MAX);
+    }
 }

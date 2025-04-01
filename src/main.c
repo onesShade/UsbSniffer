@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
@@ -9,13 +10,9 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <time.h>
-#include <errno.h>
 #include <ncurses.h>
 #include <string.h>
-
-#include <signal.h>
 #include <execinfo.h>
-
 
 #include "storageTest.h"
 #include "util.h"
@@ -23,11 +20,10 @@
 #include "globals.h"
 #include "fileSystem.h"
 
-void print_attribute_value(const Atr_Print_arg arg, int y, WINDOW *win) {
-    char path[PATH_MAX];
+void print_attribute_value(const char* dir,const Atr_Print_arg arg, int y, WINDOW *win) {
     char buffer[MAX_READ];
-
-    snprintf(path, sizeof(path), "%s%s/%s", SYSFS_USB_DEVICES, cursor.device_name, arg.attribute_name);
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s%s", dir, arg.attribute_name);
     read_usb_attribute(path, buffer, sizeof(buffer));
     if(!buffer[0]) {
         return;
@@ -37,119 +33,42 @@ void print_attribute_value(const Atr_Print_arg arg, int y, WINDOW *win) {
 }
 
 int print_storage_device_info() {
-    DIR *dir = NULL;
-    char path[PATH_MAX];
-    char path_other[PATH_MAX];
-    char path_final[PATH_MAX];
+    char path_temp[PATH_MAX];
+    char path_block[PATH_MAX];
     char buffer[MAX_READ];
-    struct dirent *ent;
-    struct stat st;
-    char found = 0;
 
     il_info.curr_y++;
-    mvwprintw(right_win, il_info.curr_y++, 3 , "-STORAGE DEVICE-");
+    mvwprintw(right_win, il_info.curr_y++, COLS / 4 - 17 / 2 , "-STORAGE DEVICE-");
 
-    snprintf(path, sizeof(path), "%s%s", SYSFS_USB_DEVICES, cursor.device_name);
-    
-    if (!open_dir(&dir, path)) { 
+    FindEntryArg traverce_arg[] = {
+        {filter_has_simbol, (const void*)":"},
+        {filter_prefix, (const void*)"host"},
+        {filter_prefix, (const void*)"target"},
+        {filter_has_simbol, (const void*)":"},
+        {filter_prefix, (const void*)"block"},
+        {filter_regular_entries, NULL},
+        {NULL, NULL}
+    };
+
+    snprintf(path_temp, sizeof(path_temp), "%s%s", SYSFS_USB_DEVICES, cursor.device_name);
+    if (!traverse_path(path_temp, traverce_arg, path_block)) {
         return 0;
     }
 
-    found = 0;
-    while ((ent = readdir(dir)) != NULL) {
-        if (strncmp(ent->d_name, cursor.device_name, strlen(cursor.device_name)) != 0 || 
-        strchr(ent->d_name, ':') == NULL) {
-            continue;
-        }
-        found = 1;
-        break;
-    }
-    if(!found) return 0;
-    snprintf(path_other, sizeof(path), "%s/%s", path, ent->d_name);
-
-    if (!open_dir(&dir, path_other)) { 
-        return 0;
-    }
-
-    const char* host = "host";
-    found = 0;
-    while ((ent = readdir(dir)) != NULL) {
-        if (strncmp(host, ent->d_name, strlen(host)) != 0) {
-            continue;
-        }
-        found = 1;
-        break;
-    }
-    if(!found) return 0;
-    snprintf(path, sizeof(path), "%s/%s", path_other, ent->d_name);
-    if (!open_dir(&dir, path)) { 
-        return 0;
-    }
-    found = 0;
-    const char* target = "target";
-    while ((ent = readdir(dir)) != NULL) {
-        if (strncmp(target, ent->d_name, strlen(target)) != 0) {
-            continue;
-        }
-        found = 1;
-        break;
-    }
-    if(!found) return 0;
-    snprintf(path_other, sizeof(path), "%s/%s", path, ent->d_name);
-    if (!open_dir(&dir, path_other)) { 
-        return 0;
-    }
-    found = 0;
-    while ((ent = readdir(dir)) != NULL) {
-        if (strchr(ent->d_name, ':') == NULL) {
-            continue;
-        }
-        found = 1;
-        break;
-    }
-    if(!found) return 0;
-    
-    snprintf(path, sizeof(path), "%s/%s", path_other, ent->d_name);
-    if (!open_dir(&dir, path)) { 
-        return 0;
-    }
-
-    snprintf(path_other, sizeof(path), "%s/block", path);
-
-    if (!open_dir(&dir, path_other)) { 
-        return 0;
-    }
-
-    while ((ent = readdir(dir)) != NULL) {
-        if (ent->d_name[0] == '.') {
-            continue;
-        }
-        break;
-    }
-
-    snprintf(cursor.block_name, PATH_MAX, "/%s", ent->d_name);
-
-    snprintf(path_final, sizeof(path), "%s/%s", path_other, ent->d_name);
-    if (!open_dir(&dir, path_final)) { 
-        return 0;
-    }
+    extract_top_dir(path_block, path_temp);
+    snprintf(cursor.block_name, PATH_MAX, "/%s", path_temp);
 
     mvwprintw(right_win, il_info.curr_y++, 1, "Block path is :");
-    mvwprintw(right_win, il_info.curr_y++, 1, "%s", path_final);
+    mvwprintw(right_win, il_info.curr_y++, 1, "%s", path_block);
     
-    snprintf(path, sizeof(path), "%s/size", path_final);
-    read_usb_attribute(path, buffer, sizeof(buffer));
+    snprintf(path_temp, sizeof(path_temp), "%s/size", path_block);
+    read_usb_attribute(path_temp, buffer, sizeof(buffer));
     unsigned long int size = 0;
     sscanf(buffer, "%ld", &size);
-
     mvwprintw(right_win, il_info.curr_y++, 1, "Size: %ld MB\n", size * 512 / 1024 / 1024);
-
-    snprintf(path, sizeof(path), "%s%s/%s", SYSFS_USB_DEVICES, cursor.device_name, "bMaxPower");
-    if (access(path, F_OK) == 0) {
-        read_usb_attribute(path, buffer, sizeof(buffer));
-        mvwprintw(right_win, il_info.curr_y++, 1, "Max Power: %s\n", buffer);
-    }
-    if (dir) closedir(dir);
+    
+    snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, cursor.device_name);
+    print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL}, il_info.curr_y++, right_win);
     return 1;
 }
 
@@ -210,16 +129,17 @@ void draw_right_window() {
     };
 
     mvwprintw(right_win, il_info.curr_y++, 1, "Device name: %s", cursor.device_name);
-
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, cursor.device_name);
     char count = 0;
     for (; args[count].attribute_name ; count++) {
-        print_attribute_value(args[count], il_info.curr_y++, right_win);
+        print_attribute_value(path, args[count], il_info.curr_y++, right_win);
     }
 
     if (is_storage_device(cursor.device_name)) {
         print_storage_device_info();
         mvwprintw(right_win, il_info.curr_y++, 1, "Block name: %s", cursor.block_name);
-        get_mount_points(cursor.block_name);
+        get_mount_points();
     }
     box(right_win, 0, 0);
     wrefresh(right_win);
