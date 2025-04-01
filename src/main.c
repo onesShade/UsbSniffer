@@ -13,10 +13,15 @@
 #include <ncurses.h>
 #include <string.h>
 
+#include <signal.h>
+#include <execinfo.h>
+
+
 #include "storageTest.h"
 #include "util.h"
 #include "defines.h"
 #include "globals.h"
+#include "fileSystem.h"
 
 void print_attribute_value(const Atr_Print_arg arg, int y, WINDOW *win) {
     char path[PATH_MAX];
@@ -38,6 +43,8 @@ int print_storage_device_info() {
     char path_final[PATH_MAX];
     char buffer[MAX_READ];
     struct dirent *ent;
+    struct stat st;
+    char found = 0;
 
     il_info.curr_y++;
     mvwprintw(right_win, il_info.curr_y++, 3 , "-STORAGE DEVICE-");
@@ -47,15 +54,17 @@ int print_storage_device_info() {
     if (!open_dir(&dir, path)) { 
         return 0;
     }
-    
+
+    found = 0;
     while ((ent = readdir(dir)) != NULL) {
         if (strncmp(ent->d_name, cursor.device_name, strlen(cursor.device_name)) != 0 || 
         strchr(ent->d_name, ':') == NULL) {
             continue;
         }
+        found = 1;
         break;
     }
-
+    if(!found) return 0;
     snprintf(path_other, sizeof(path), "%s/%s", path, ent->d_name);
 
     if (!open_dir(&dir, path_other)) { 
@@ -63,39 +72,43 @@ int print_storage_device_info() {
     }
 
     const char* host = "host";
+    found = 0;
     while ((ent = readdir(dir)) != NULL) {
         if (strncmp(host, ent->d_name, strlen(host)) != 0) {
             continue;
         }
+        found = 1;
         break;
     }
-
+    if(!found) return 0;
     snprintf(path, sizeof(path), "%s/%s", path_other, ent->d_name);
-
     if (!open_dir(&dir, path)) { 
         return 0;
     }
-
+    found = 0;
     const char* target = "target";
     while ((ent = readdir(dir)) != NULL) {
         if (strncmp(target, ent->d_name, strlen(target)) != 0) {
             continue;
         }
+        found = 1;
         break;
     }
-
+    if(!found) return 0;
     snprintf(path_other, sizeof(path), "%s/%s", path, ent->d_name);
     if (!open_dir(&dir, path_other)) { 
         return 0;
     }
-
+    found = 0;
     while ((ent = readdir(dir)) != NULL) {
         if (strchr(ent->d_name, ':') == NULL) {
             continue;
         }
+        found = 1;
         break;
     }
-
+    if(!found) return 0;
+    
     snprintf(path, sizeof(path), "%s/%s", path_other, ent->d_name);
     if (!open_dir(&dir, path)) { 
         return 0;
@@ -297,6 +310,7 @@ int main() {
     init_log();
     init_ncurses();
     init_globals();
+
 
     cursor.window = device_list;
     cursor.y = WIDOW_TOP_PADDING;

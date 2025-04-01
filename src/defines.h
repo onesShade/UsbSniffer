@@ -9,4 +9,4 @@
 #define TEST_FILE_NAME "storage_test.bin"
 #define LOG_FILE "app.log"
 #define MAIN_LOOP_SLEEP_TIME_MS 70
-#define HOTPLUG_SLEEP_MS 2000
+#define HOTPLUG_SLEEP_MS 10 
