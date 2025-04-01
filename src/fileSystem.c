@@ -1,9 +1,4 @@
-#include "fileSystem.h"
-
-#include "util.h"
-
 #include <linux/limits.h>
-#include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
@@ -15,10 +10,10 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <limits.h>
-#include <stdlib.h>
-#include <time.h>
 #include <ncurses.h>
 
+#include "fileSystem.h"
+#include "util.h"
 #include "defines.h"
 
 int open_dir(DIR **dir, const char *path) {

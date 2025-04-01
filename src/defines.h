@@ -4,7 +4,7 @@
 #define MAX_READ 256
 #define PATH_MAX 256
 #define WIDOW_TOP_PADDING 2
-#define DEBUG
+#define NDEBUG
 #define SELECTED_TEXT_COLOR 1
 #define TEST_FILE_NAME "storage_test.bin"
 #define LOG_FILE "app.log"

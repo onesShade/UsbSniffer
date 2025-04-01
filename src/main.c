@@ -11,9 +11,7 @@
 #include <limits.h>
 #include <time.h>
 #include <ncurses.h>
-#include <string.h>
 #include <execinfo.h>
-
 #include "storageTest.h"
 #include "util.h"
 #include "defines.h"
@@ -66,7 +64,7 @@ int print_storage_device_info() {
     unsigned long int size = 0;
     sscanf(buffer, "%ld", &size);
     mvwprintw(right_win, il_info.curr_y++, 1, "Size: %ld MB\n", size * 512 / 1024 / 1024);
-    
+
     snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, cursor.device_name);
     print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL}, il_info.curr_y++, right_win);
     return 1;

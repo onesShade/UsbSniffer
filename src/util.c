@@ -1,7 +1,5 @@
 #define _POSIX_C_SOURCE 199309L
-#include "util.h"
 
-#include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
@@ -10,15 +8,12 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <limits.h>
-#include <stdlib.h>
-#include <time.h>
-#include <errno.h>
 #include <ncurses.h>
 
+#include "util.h"
 #include "defines.h"
 #include "fileSystem.h"
 
