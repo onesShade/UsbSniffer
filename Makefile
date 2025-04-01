@@ -34,7 +34,7 @@ $(BUILD_DIR):
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -rf $(BUILD_DIR) $(BIN_DIR)
+	rm -rf $(BUILD_DIR)/* $(BIN_DIR)/*
 
 # Run the application
 run: $(TARGET)

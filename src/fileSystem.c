@@ -1,6 +1,5 @@
 #include "fileSystem.h"
 
-#define _POSIX_C_SOURCE 199309L
 #include "util.h"
 
 #include <stdio.h>
@@ -18,7 +17,6 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <time.h>
-#include <errno.h>
 #include <ncurses.h>
 
 #include "defines.h"
@@ -62,4 +60,63 @@ void read_usb_attribute(const char *path, char *buffer, size_t size) {
         log_message("file at %s empty", path);
         buffer[0] = '\0';
     }
+}
+
+int filter_has_simbol(const char *name, const void *arg) {
+    const char simbol = ((const char *)arg)[0];
+    return strchr(name, simbol) != NULL;
+}
+
+// Фильтр для поиска по префиксу
+int filter_prefix(const char *name, const void *arg) {
+    const char *prefix = (const char *)arg;
+    return strncmp(name, prefix, strlen(prefix)) == 0;
+}
+
+// Фильтр для стандартных файлов (не . и ..)
+int filter_regular_entries(const char *name, const void *unused) {
+    return name[0] != '.';
+}
+
+int find_first_matching_entry(const char* path, FindEntryArg arg, char *result_path) {
+
+    DIR* dir = opendir(path);
+    if (!dir) {
+        log_message("Failed to open dir: %s", path);
+        return 0;
+    }
+    
+    int found = 0;
+    struct dirent *ent;
+    while ((ent = readdir(dir)) != NULL) {
+        if (arg.filter_fun(ent->d_name, arg.filter_arg)) {
+            strncpy(result_path, ent->d_name, PATH_MAX);
+            found = 1;
+            break;
+        }
+    }
+
+    closedir(dir);
+    return found;
+}
+
+int traverse_path(const char *base_path,
+    FindEntryArg* arg_array,
+    int filters_count,
+    char *final_path) {
+        
+    char current_path[PATH_MAX];
+    strncpy(current_path, base_path, PATH_MAX);
+
+    for (int i = 0; i < filters_count; i++) {
+        char next_entry[PATH_MAX];
+        if (!find_first_matching_entry(current_path, arg_array[i], next_entry)) {
+            return 0;
+        }
+
+        snprintf(current_path, PATH_MAX, "%s/%s", current_path, next_entry);
+    }
+
+    strncpy(final_path, current_path, PATH_MAX);
+    return 1;
 }
