@@ -14,6 +14,7 @@
 #include <time.h>
 #include <errno.h>
 #include <ncurses.h>
+#include <ctype.h>
 
 #include "defines.h"
 
@@ -115,4 +116,30 @@ void test_storage(const char *mount_point, int size_mb) {
     printf("Press space to exit...\r\n");
     while (getch() != ' ');
 
+}
+
+void use_octal_escapes(char* str) {
+    char buffer[PATH_MAX];
+
+    int sp = 0;
+    int dp = 0;
+    int og_len = strlen(str);
+
+    for(; sp < og_len; sp++, dp++) {
+        if (str[sp] == '\\' 
+            && isdigit(str[sp + 1])
+            && isdigit(str[sp + 2])
+            && isdigit(str[sp + 3])) {
+                
+            char simbol = (str[sp + 1] - '0') * 64 
+                        + (str[sp + 2] - '0') * 8 
+                        + (str[sp + 3] - '0');
+            buffer[dp] = simbol;
+            sp += 3; 
+        } else {
+            buffer[dp] = str[sp];
+        }
+    }
+    buffer[dp] = 0;
+    strncpy(str, buffer, PATH_MAX);
 }

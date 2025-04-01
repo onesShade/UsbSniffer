@@ -142,15 +142,12 @@ int print_storage_device_info() {
 
 void get_mount_points() {
     char buffer[MAX_READ];
-    char path_name[MAX_READ];
-    char path_mount[MAX_READ];
-    
+
     FILE* mounts = fopen(PROC_MOUNTS, "r");
     if(!mounts) {
         return;
     }
     il_info.curr_y++;
-    mvwprintw(right_win, il_info.curr_y++, 1, "Mount point:");
 
     char mounted = 0;
     while (fgets(buffer, sizeof(buffer), mounts)) {
@@ -158,7 +155,14 @@ void get_mount_points() {
             buffer[strcspn(buffer, "\n")] = 0;
 
         if (strstr(buffer, cursor.block_name) != NULL) {
-            sscanf(buffer, "%s%s", &path_name, &path_mount);
+            char path_name[MAX_READ];
+            char path_mount[MAX_READ];
+            char file_system[MAX_READ];
+
+            sscanf(buffer, "%s%s%s", &path_name, &path_mount, &file_system);
+            use_octal_escapes(path_mount);
+            mvwprintw(right_win, il_info.curr_y++, 1, "Filesytem: %s", file_system);
+            mvwprintw(right_win, il_info.curr_y++, 1, "Mount point:");
             mvwprintw(right_win, il_info.curr_y++, 1, "%s", path_mount);
             mounted = 1;
             strcpy(cursor.mount_path, path_mount);
