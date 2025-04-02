@@ -62,13 +62,11 @@ int filter_has_simbol(const char *name, const void *arg) {
     return strchr(name, simbol) != NULL;
 }
 
-// Фильтр для поиска по префиксу
 int filter_prefix(const char *name, const void *arg) {
     const char *prefix = (const char *)arg;
     return strncmp(name, prefix, strlen(prefix)) == 0;
 }
 
-// Фильтр для стандартных файлов (не . и ..)
 int filter_regular_entries(const char *name, const void *unused) {
     return name[0] != '.';
 }
@@ -80,7 +78,9 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
         log_message("Failed to open dir: %s", path);
         return 0;
     }
-    
+#ifdef DEBUG
+    log_message("Travecrcing to path %s", path);
+#endif
     int found = 0;
     struct dirent *ent;
     while ((ent = readdir(dir)) != NULL) {
@@ -95,9 +95,7 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
     return found;
 }
 
-int traverse_path(const char *base_path,
-    FindEntryArg* arg_array,
-    char *final_path) {
+int traverse_path(const char *base_path, FindEntryArg* arg_array, char *final_path) {
         
     char current_path[PATH_MAX];
     char temp_path[PATH_MAX];

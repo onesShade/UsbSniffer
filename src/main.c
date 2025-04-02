@@ -1,4 +1,3 @@
-#include <linux/limits.h>
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
@@ -89,7 +88,7 @@ void get_mount_points() {
             char path_mount[MAX_READ];
             char file_system[MAX_READ];
 
-            sscanf(buffer, "%s%s%s", &path_name, &path_mount, &file_system);
+            sscanf(buffer, "%s%s%s", path_name, path_mount, file_system);
             use_octal_escapes(path_mount);
             mvwprintw(right_win, il_info.curr_y++, 1, "Filesytem: %s", file_system);
             mvwprintw(right_win, il_info.curr_y++, 1, "Mount point:");
@@ -174,10 +173,6 @@ void draw_left_window() {
         log_message("Could not open USB devices directory");
     }
     wrefresh(left_win);
-
-    if (dl_info.len && i > dl_info.len) {
-        msleep(HOTPLUG_SLEEP_MS);
-    }
     dl_info.len = i;
 }
 
@@ -228,7 +223,6 @@ int main() {
     init_log();
     init_ncurses();
     init_globals();
-
 
     cursor.window = device_list;
     cursor.y = WIDOW_TOP_PADDING;

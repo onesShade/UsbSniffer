@@ -13,9 +13,6 @@ SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 TARGET := $(BIN_DIR)/app
 
-# Ensure directories exist
-$(shell mkdir -p $(BUILD_DIR) $(BIN_DIR))
-
 # Default target
 all: $(TARGET)
 
