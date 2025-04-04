@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
@@ -47,13 +48,13 @@ int print_storage_device_info() {
         {NULL, NULL}
     };
 
-    snprintf(path_temp, sizeof(path_temp), "%s%s", SYSFS_USB_DEVICES, cursor.device_name);
+    snprintf(path_temp, sizeof(path_temp), "%s%s", SYSFS_USB_DEVICES, selection_lw.device_name);
     if (!traverse_path(path_temp, traverce_arg, path_block)) {
         return 0;
     }
 
     extract_top_dir(path_block, path_temp);
-    snprintf(cursor.block_name, PATH_MAX, "/%s", path_temp);
+    snprintf(selection_lw.block_name, PATH_MAX, "/%s", path_temp);
 
     mvwprintw(right_win, il_info.curr_y++, 1, "Block path is :");
     mvwprintw(right_win, il_info.curr_y++, 1, "%s", path_block);
@@ -64,7 +65,7 @@ int print_storage_device_info() {
     sscanf(buffer, "%ld", &size);
     mvwprintw(right_win, il_info.curr_y++, 1, "Size: %ld MB\n", size * 512 / 1024 / 1024);
 
-    snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, cursor.device_name);
+    snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
     print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL}, il_info.curr_y++, right_win);
     return 1;
 }
@@ -83,9 +84,9 @@ void get_mount_points() {
         if ((strcspn(buffer, "\n") < strnlen(buffer, MAX_READ)))
             buffer[strcspn(buffer, "\n")] = 0;
 
-        if (strstr(buffer, cursor.block_name) != NULL) {
+        if (strstr(buffer, selection_lw.block_name) != NULL) {
             char path_name[MAX_READ];
-            char path_mount[MAX_READ];
+            char path_mount[PATH_MAX];
             char file_system[MAX_READ];
 
             sscanf(buffer, "%s%s%s", path_name, path_mount, file_system);
@@ -94,7 +95,7 @@ void get_mount_points() {
             mvwprintw(right_win, il_info.curr_y++, 1, "Mount point:");
             mvwprintw(right_win, il_info.curr_y++, 1, "%s", path_mount);
             mounted = 1;
-            strcpy(cursor.mount_path, path_mount);
+            strcpy(selection_lw.mount_path, path_mount);
         }
     }
     if (!mounted) {
@@ -125,17 +126,17 @@ void draw_right_window() {
         {NULL, NULL, NULL}
     };
 
-    mvwprintw(right_win, il_info.curr_y++, 1, "Device name: %s", cursor.device_name);
+    mvwprintw(right_win, il_info.curr_y++, 1, "Device name: %s", selection_lw.device_name);
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, cursor.device_name);
+    snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
     char count = 0;
     for (; args[count].attribute_name ; count++) {
         print_attribute_value(path, args[count], il_info.curr_y++, right_win);
     }
 
-    if (is_storage_device(cursor.device_name)) {
+    if (is_storage_device(selection_lw.device_name)) {
         print_storage_device_info();
-        mvwprintw(right_win, il_info.curr_y++, 1, "Block name: %s", cursor.block_name);
+        mvwprintw(right_win, il_info.curr_y++, 1, "Block name: %s", selection_lw.block_name);
         get_mount_points();
     }
     box(right_win, 0, 0);
@@ -151,6 +152,7 @@ void draw_left_window() {
 
     int y = 2;
     int i = 0;
+
     if ((dir = opendir(SYSFS_USB_DEVICES)) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             if (ent->d_name[0] == '.') continue;
@@ -159,11 +161,11 @@ void draw_left_window() {
                 continue;
             }
             i++;
-            if(cursor.window == device_list && y == cursor.y) {
+            if(y == selection_lw.y) {
                 wattron(left_win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
                 mvwprintw(left_win, y++, 1, "%s", ent->d_name);
                 wattroff(left_win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
-                strcpy(cursor.device_name, ent->d_name);
+                strcpy(selection_lw.device_name, ent->d_name);
             } else {
                 mvwprintw(left_win, y++, 1, "%s", ent->d_name);
             }
@@ -180,14 +182,21 @@ void draw_bottom_window() {
     werase(bottom_win);
     int x = -16;
     
-    if (is_storage_device(cursor.device_name)) {
+    if (is_storage_device(selection_lw.device_name)) {
         mvwprintw(bottom_win, 0, x += 16, "F2 - TEST");
     }
     mvwprintw(bottom_win, 0, x += 16, "F10 - EXIT");
     wrefresh(bottom_win);
 }
 
+void draw_popup_window() {
+    werase(popup_win);
+    box(popup_win, 0, 0);
+    wrefresh(popup_win);
+}
+
 void update(int key) {
+
     if (key == KEY_RESIZE) {
         endwin();
         refresh();
@@ -195,27 +204,34 @@ void update(int key) {
         resize_term(0, 0);
         reinit_windows();
     }
-    if (key == KEY_DOWN && cursor.y <= dl_info.len + WIDOW_TOP_PADDING) {
-        if (cursor.y == dl_info.len + WIDOW_TOP_PADDING - 1) 
-            cursor.y = WIDOW_TOP_PADDING;
-        else 
-            cursor.y++;
-        cursor.mount_path[0] = 0;
-    }
-    if (key == KEY_UP && cursor.y >= WIDOW_TOP_PADDING) {
-        if(cursor.y == WIDOW_TOP_PADDING)
-            cursor.y = dl_info.len + WIDOW_TOP_PADDING - 1;
-        else
-            cursor.y--;
-        cursor.mount_path[0] = 0;
-    }
+    
+    if (selection_lw.window == device_list) {
+        if (key == KEY_DOWN && selection_lw.y <= dl_info.len + WIDOW_TOP_PADDING) {
+            if (selection_lw.y == dl_info.len + WIDOW_TOP_PADDING - 1) 
+                selection_lw.y = WIDOW_TOP_PADDING;
+            else 
+                selection_lw.y++;
+            selection_lw.mount_path[0] = 0;
+        }
+        if (key == KEY_UP && selection_lw.y >= WIDOW_TOP_PADDING) {
+            if(selection_lw.y == WIDOW_TOP_PADDING)
+                selection_lw.y = dl_info.len + WIDOW_TOP_PADDING - 1;
+            else
+                selection_lw.y--;
+            selection_lw.mount_path[0] = 0;
+        }
 
-    if(key == 266 && is_storage_device(cursor.device_name)) {   //F2
-        test_storage(cursor.mount_path, 100);
-    }
+        if(key == 266 && is_storage_device(selection_lw.device_name)) {   //F2
+            selection_lw.window = storage_test_settings;
+            test_storage(selection_lw.mount_path, 100);
+        }
 
-    if(cursor.y > dl_info.len + WIDOW_TOP_PADDING - 1 && cursor.y > WIDOW_TOP_PADDING) {
-        cursor.y--;
+        if(selection_lw.y > dl_info.len + WIDOW_TOP_PADDING - 1 && selection_lw.y > WIDOW_TOP_PADDING) {
+            selection_lw.y--;
+        }
+    }
+    if (selection_lw.window == storage_test_settings) {
+        update_st_test_settings(key);
     }
 }
 
@@ -224,12 +240,12 @@ int main() {
     init_ncurses();
     init_globals();
 
-    cursor.window = device_list;
-    cursor.y = WIDOW_TOP_PADDING;
-    cursor.mount_path[0] = 0;
+    selection_lw.window = device_list;
+    selection_lw.y = WIDOW_TOP_PADDING;
+    selection_lw.mount_path[0] = 0;
     while (1) {
         int key = getch();
-        if (key == 'q' || key == 274) break;  //F10
+        if (key == 274) break;  //F10
         update(key);
 
         refresh();
@@ -238,6 +254,8 @@ int main() {
         draw_left_window();
         draw_right_window();
         draw_bottom_window();
+        if(selection_lw.window != device_list)
+            draw_popup_window();
 
         msleep(MAIN_LOOP_SLEEP_TIME_MS);
     }

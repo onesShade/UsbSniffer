@@ -17,6 +17,7 @@
 #include <ctype.h>
 
 #include "defines.h"
+#include "globals.h"
 
 void test_storage(const char *mount_point, int size_mb) {
     char file_path[256];
@@ -142,4 +143,10 @@ void use_octal_escapes(char* str) {
     }
     buffer[dp] = 0;
     strncpy(str, buffer, PATH_MAX);
+}
+
+void update_st_test_settings(int key) {
+    if (key == 'q') {
+        selection_lw.window = device_list;
+    }
 }

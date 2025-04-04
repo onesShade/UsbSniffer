@@ -1,7 +1,7 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -pedantic -Wno-unused-parameter -Wno-unused-variable -O2
-LDFLAGS = -lrt -lncurses
+CFLAGS = -Wall -Wextra -std=c11 -pedantic -Wno-unused-parameter -Wno-unused-variable -Og -fsanitize=address -g
+LDFLAGS = -lrt -lncurses -fsanitize=address -Og -g
 
 # Directory structure
 SRC_DIR = src
