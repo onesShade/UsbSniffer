@@ -8,6 +8,7 @@
 #define SELECTED_TEXT_COLOR 1
 #define TEST_FILE_NAME "storage_test.bin"
 #define LOG_FILE "app.log"
-#define MAIN_LOOP_SLEEP_TIME_MS 70
+#define MAIN_LOOP_SLEEP_TIME_MS 50
+#define CICLES_TO_UPDATE 20
 
 #include <linux/limits.h>

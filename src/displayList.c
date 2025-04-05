@@ -5,6 +5,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include "defines.h"
+#include <string.h>
 
 DispayList* dl_init(char selectable, int x, int y) {
     DispayList* dl = malloc(sizeof(DispayList));
@@ -51,6 +52,13 @@ void dl_draw(DispayList* dl, WINDOW* win) {
         dl->selected--;
 
     for(size_t line = 0; line < dl->entryes->size; line++) {
+        if(((char*)(vector_at(dl->entryes, line)))[0] == '@') {
+            int x = getmaxx(win) / 2 - strlen((const char*)vector_at(dl->entryes, line)) / 2;
+            mvwprintw(win, dl->y + line, x, "%s", 
+                (char*)(vector_at(dl->entryes, line) + 1));
+            continue;
+        }
+
         if (dl->selectable && line == dl->selected) {
             wattron(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
             mvwprintw(win, dl->y + line, dl->x, "%s", 

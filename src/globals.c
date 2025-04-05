@@ -4,8 +4,6 @@
 
 Selection selection_lw;
 
-ILInfo il_info;
-
 WINDOW *left_win;
 WINDOW *right_win;
 WINDOW *bottom_win;
@@ -13,16 +11,20 @@ WINDOW *popup_win;
 
 DispayList* devices_dl;
 DispayList* atr_dl;
-DispayList* mount_p_dl;
+DispayList* mount_point_dl;
+DispayList* mount_path_dl;
+int update_cycle_counter;
 
 void init_globals() {
+    update_cycle_counter = 2;
     left_win = NULL;
     right_win = NULL;
     bottom_win = NULL;
     popup_win = NULL;
     devices_dl = dl_init(TRUE, 1, 1);
     atr_dl = dl_init(FALSE, 1, 1);
-    mount_p_dl = dl_init(FALSE, 1, 1);
+    mount_point_dl = dl_init(FALSE, 1, 1);
+    mount_path_dl = dl_init(FALSE, 1, 1);
     reinit_windows();
 }
 
@@ -45,5 +47,6 @@ void free_globals() {
     endwin();  
     dl_free(devices_dl);
     dl_free(atr_dl);
-    dl_free(mount_p_dl);
+    dl_free(mount_point_dl);
+    dl_free(mount_path_dl);
 }

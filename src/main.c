@@ -19,15 +19,19 @@
 #include "defines.h"
 #include "globals.h"
 
-void print_attribute_value(const char* dir,const Atr_Print_arg arg, int y, WINDOW *win) {
+void update_atr_dl();
+void update_device_dl();
+
+void print_attribute_value(const char* dir,const Atr_Print_arg arg, WINDOW *win) {
     char buffer[MAX_READ];
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s%s", dir, arg.attribute_name);
     read_usb_attribute(path, buffer, sizeof(buffer));
     if(!buffer[0]) {
+        dl_add_entry(atr_dl, "%s: ---", arg.print_prefix);
         return;
     }
-    dl_add_entry(atr_dl, "%s: %s %s\n",
+    dl_add_entry(atr_dl, "%s: %s %s",
          arg.print_prefix, buffer, arg.print_postfix ? arg.print_postfix : "");
 }
 
@@ -36,8 +40,7 @@ int print_storage_device_info() {
     char path_block[PATH_MAX];
     char buffer[MAX_READ];
 
-    il_info.curr_y++;
-    mvwprintw(right_win, il_info.curr_y++, COLS / 4 - 17 / 2 , "-STORAGE DEVICE-");
+    dl_add_entry(atr_dl, "@---STORAGE DEVICE---");
 
     FindEntryArg traverce_arg[] = {
         {filter_has_simbol, (const void*)":"},
@@ -56,34 +59,33 @@ int print_storage_device_info() {
 
     extract_top_dir(path_block, path_temp);
     snprintf(selection_lw.block_name, PATH_MAX, "/%s", path_temp);
+    dl_add_entry(atr_dl,  "Block path is :");
+    dl_add_entry(atr_dl,  "%s", path_block);
 
-    mvwprintw(right_win, il_info.curr_y++, 1, "Block path is :");
-    mvwprintw(right_win, il_info.curr_y++, 1, "%s", path_block);
     
     snprintf(path_temp, sizeof(path_temp), "%s/size", path_block);
     read_usb_attribute(path_temp, buffer, sizeof(buffer));
     unsigned long int size = 0;
     sscanf(buffer, "%ld", &size);
-    mvwprintw(right_win, il_info.curr_y++, 1, "Size: %ld MB\n", size * 512 / 1024 / 1024);
+    dl_add_entry(atr_dl, "Size: %ld MB\n", size * 512 / 1024 / 1024);
 
     snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
-    print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL}, il_info.curr_y++, right_win);
+    print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL},  right_win);
     return 1;
 }
 
 void get_mount_points() {
-    dl_clear(mount_p_dl);
+    dl_clear(mount_point_dl);
     if (!is_storage_device(selection_lw.device_name))
         return;
 
-    mount_p_dl->y = atr_dl->entryes->size + atr_dl->y + 1;
+    mount_point_dl->y = atr_dl->entryes->size + atr_dl->y + 2;
     char buffer[MAX_READ];
 
     FILE* mounts = fopen(PROC_MOUNTS, "r");
     if(!mounts) {
         return;
     }
-    il_info.curr_y++;
 
     char mounted = 0;
     while (fgets(buffer, sizeof(buffer), mounts)) {
@@ -94,22 +96,19 @@ void get_mount_points() {
             char path_name[MAX_READ];
             char path_mount[PATH_MAX];
             char file_system[MAX_READ];
-
-            if(!mounted)
-                dl_add_entry(mount_p_dl, "Mount points:");
             
             sscanf(buffer, "%s%s%s", path_name, path_mount, file_system);
             use_octal_escapes(path_mount);
 
-            dl_add_entry(mount_p_dl, "Filesytem: %s", file_system);
-            dl_add_entry(mount_p_dl, "%s", path_mount);
+            dl_add_entry(mount_point_dl, "Filesytem: %s", file_system);
+            dl_add_entry(mount_point_dl, "%s", path_mount);
 
             mounted = 1;
             strcpy(selection_lw.mount_path, path_mount);
         }
     }
     if (!mounted) {
-        dl_add_entry(mount_p_dl, "[none]");
+        dl_add_entry(mount_point_dl, "[none]");
     }
     fclose(mounts);
 }
@@ -117,13 +116,14 @@ void get_mount_points() {
 void draw_right_window() {
     werase(right_win);
     dl_draw(atr_dl, right_win);
-    if (is_storage_device(selection_lw.device_name))
-        dl_draw(mount_p_dl, right_win);
+    if (is_storage_device(selection_lw.device_name)) {
+        dl_draw(mount_point_dl, right_win);
+        mvwprintw(right_win, mount_point_dl->y - 1, mount_point_dl->x,  "    Mount points:");
+    }
+
     box(right_win, 0, 0);
     wrefresh(right_win);
 }
-
-void update_device_dl();
 
 void draw_left_window() {
     werase(left_win);
@@ -149,12 +149,7 @@ void draw_popup_window() {
     wrefresh(popup_win);
 }
 
-void update_atr_dl();
-
-void update(int key) {
-    update_device_dl();
-    update_atr_dl();
-
+void update_keys(int key) {
     if (key == KEY_RESIZE) {
         endwin();
         refresh();
@@ -166,14 +161,16 @@ void update(int key) {
     if (selection_lw.window == device_list) { 
         if (key == KEY_DOWN) {
             dl_iterate(devices_dl, +1);   
+            update_cycle_counter = 0;
         }
         if (key == KEY_UP) {
             dl_iterate(devices_dl, -1);
+            update_cycle_counter = 0;
         }
 
         if(key == 266 && is_storage_device(selection_lw.device_name)) {   //F2
             selection_lw.window = storage_test_settings;
-            test_storage(selection_lw.mount_path, 100);
+            //test_storage(selection_lw.mount_path, 100);
         }
     }
     if (selection_lw.window == storage_test_settings) {
@@ -182,6 +179,15 @@ void update(int key) {
 
     if(dl_get_selected(devices_dl)) {
         strncpy(selection_lw.device_name, dl_get_selected(devices_dl), MAX_DL_STR);
+    }
+}
+
+void update() {
+    update_cycle_counter--;
+    if(update_cycle_counter <= 0) {
+        update_device_dl();
+        update_atr_dl();
+        update_cycle_counter = CICLES_TO_UPDATE;
     }
 }
 
@@ -227,13 +233,13 @@ void update_atr_dl() {
         {"maxchild", "Max Children", NULL},
         {NULL, NULL, NULL}
     };
-
+    dl_add_entry(atr_dl, "@---USB DEVICE ATTRIBUTES---");
     dl_add_entry(atr_dl, "Device name: %s", selection_lw.device_name);
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
     char count = 0;
     for (; args[count].attribute_name ; count++) {
-        print_attribute_value(path, args[count], il_info.curr_y++, right_win);
+        print_attribute_value(path, args[count], right_win);
     }
 
     if (is_storage_device(selection_lw.device_name)) {
@@ -257,7 +263,8 @@ int main() {
         int key = getch();
         if (key == 274) break;  //F10
 
-        update(key);
+        update_keys(key);
+        update();
 
         refresh();
         clear();

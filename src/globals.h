@@ -19,12 +19,9 @@ typedef struct {
     int y;
 } Selection;
 
-typedef struct {
-    int curr_y;
-} ILInfo;
-
 extern Selection selection_lw;
-extern ILInfo il_info;
+
+extern int update_cycle_counter;
 
 extern WINDOW *left_win;
 extern WINDOW *right_win;
@@ -33,7 +30,7 @@ extern WINDOW *popup_win;
 
 extern DispayList* devices_dl;
 extern DispayList* atr_dl;
-extern DispayList* mount_p_dl;
+extern DispayList* mount_point_dl;
 typedef struct {
     const char *attribute_name;
     const char *print_prefix;

@@ -10,6 +10,7 @@ typedef struct {
     char selectable;
     int x;
     int y;
+    char select_step;
 } DispayList;
 
 DispayList* dl_init(char selectable, int x, int y);
