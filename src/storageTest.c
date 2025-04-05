@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 199309L 
 
+#include "dispayList.h"
 #include "storageTest.h"
 
 #include <stdio.h>
@@ -148,5 +149,8 @@ void use_octal_escapes(char* str) {
 void update_st_test_settings(int key) {
     if (key == 'q') {
         selection_lw.window = device_list;
+    }
+    if (key == 'm') {
+        dl_iterate(mount_point_dl, +1);
     }
 }

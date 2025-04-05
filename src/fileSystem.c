@@ -130,4 +130,5 @@ void extract_top_dir(const char *path, char *output) {
         // Copy everything after the last '/'
         strncpy(output, last_slash + 1, PATH_MAX);
     }
+    return;
 }

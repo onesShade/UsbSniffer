@@ -22,16 +22,16 @@
 void update_atr_dl();
 void update_device_dl();
 
-void print_attribute_value(const char* dir,const Atr_Print_arg arg, WINDOW *win) {
+void print_attribute_value(const char* dir,const Atr_Print_arg arg, DispayList *dl) {
     char buffer[MAX_READ];
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s%s", dir, arg.attribute_name);
     read_usb_attribute(path, buffer, sizeof(buffer));
     if(!buffer[0]) {
-        dl_add_entry(atr_dl, "%s: ---", arg.print_prefix);
+        dl_add_entry(dl, DLEP_NONE,"%s: ---", arg.print_prefix);
         return;
     }
-    dl_add_entry(atr_dl, "%s: %s %s",
+    dl_add_entry(dl, DLEP_NONE,"%s: %s %s",
          arg.print_prefix, buffer, arg.print_postfix ? arg.print_postfix : "");
 }
 
@@ -40,7 +40,7 @@ int print_storage_device_info() {
     char path_block[PATH_MAX];
     char buffer[MAX_READ];
 
-    dl_add_entry(atr_dl, "@---STORAGE DEVICE---");
+    dl_add_entry(atr_dl, DLEP_CENTERED, "---STORAGE DEVICE---");
 
     FindEntryArg traverce_arg[] = {
         {filter_has_simbol, (const void*)":"},
@@ -59,18 +59,18 @@ int print_storage_device_info() {
 
     extract_top_dir(path_block, path_temp);
     snprintf(selection_lw.block_name, PATH_MAX, "/%s", path_temp);
-    dl_add_entry(atr_dl,  "Block path is :");
-    dl_add_entry(atr_dl,  "%s", path_block);
+    dl_add_entry(atr_dl,DLEP_NONE,  "Block path is :");
+    dl_add_entry(atr_dl,DLEP_NONE,  "%s", path_block);
 
     
     snprintf(path_temp, sizeof(path_temp), "%s/size", path_block);
     read_usb_attribute(path_temp, buffer, sizeof(buffer));
     unsigned long int size = 0;
     sscanf(buffer, "%ld", &size);
-    dl_add_entry(atr_dl, "Size: %ld MB\n", size * 512 / 1024 / 1024);
+    dl_add_entry(atr_dl,DLEP_NONE, "Size: %ld MB\n", size * 512 / 1024 / 1024);
 
     snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
-    print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL},  right_win);
+    print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL},  atr_dl);
     return 1;
 }
 
@@ -79,7 +79,6 @@ void get_mount_points() {
     if (!is_storage_device(selection_lw.device_name))
         return;
 
-    mount_point_dl->y = atr_dl->entryes->size + atr_dl->y + 2;
     char buffer[MAX_READ];
 
     FILE* mounts = fopen(PROC_MOUNTS, "r");
@@ -93,34 +92,39 @@ void get_mount_points() {
             buffer[strcspn(buffer, "\n")] = 0;
 
         if (strstr(buffer, selection_lw.block_name) != NULL) {
-            char path_name[MAX_READ];
+            char block_path[MAX_READ];
             char path_mount[PATH_MAX];
             char file_system[MAX_READ];
             
-            sscanf(buffer, "%s%s%s", path_name, path_mount, file_system);
+            sscanf(buffer, "%s%s%s", block_path, path_mount, file_system);
             use_octal_escapes(path_mount);
+            
+            
 
-            dl_add_entry(mount_point_dl, "Filesytem: %s", file_system);
-            dl_add_entry(mount_point_dl, "%s", path_mount);
+            if(!mounted) {
+                dl_add_entry(mount_point_dl, DLEP_CENTERED | DLEP_UNSELECTABLE, "---MOUNT POINTS---");
+            }
 
-            mounted = 1;
+            dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. fs: %s", mounted, file_system);
+            dl_add_entry(mount_point_dl, DLEP_NONE,"  %s", path_mount);
+
+            mounted++;
             strcpy(selection_lw.mount_path, path_mount);
         }
     }
     if (!mounted) {
-        dl_add_entry(mount_point_dl, "[none]");
+        dl_add_entry(mount_point_dl, DLEP_NONE, "[none]");
     }
     fclose(mounts);
 }
 
 void draw_right_window() {
     werase(right_win);
-    dl_draw(atr_dl, right_win);
+    dl_draw(atr_dl, right_win, DLRP_NONE);
     if (is_storage_device(selection_lw.device_name)) {
-        dl_draw(mount_point_dl, right_win);
-        mvwprintw(right_win, mount_point_dl->y - 1, mount_point_dl->x,  "    Mount points:");
+        dl_set_pos(mount_point_dl, 1,  atr_dl->entryes->size + atr_dl->y + 2);
+        dl_draw(mount_point_dl, right_win, DLRP_HIDE_SELECTION);
     }
-
     box(right_win, 0, 0);
     wrefresh(right_win);
 }
@@ -145,11 +149,19 @@ void draw_bottom_window() {
 
 void draw_popup_window() {
     werase(popup_win);
+    if (is_storage_device(selection_lw.device_name)) {
+        dl_set_pos(mount_point_dl, 1, 1);
+        dl_draw(mount_point_dl, popup_win, DLRP_NONE);
+    }
     box(popup_win, 0, 0);
     wrefresh(popup_win);
 }
 
 void update_keys(int key) {
+    if (key == 274) {
+        is_open = FALSE;  //F10
+    }
+
     if (key == KEY_RESIZE) {
         endwin();
         refresh();
@@ -166,6 +178,10 @@ void update_keys(int key) {
         if (key == KEY_UP) {
             dl_iterate(devices_dl, -1);
             update_cycle_counter = 0;
+        }
+        
+        if (key == 'q') {
+            is_open = FALSE;  //F10
         }
 
         if(key == 266 && is_storage_device(selection_lw.device_name)) {   //F2
@@ -203,14 +219,14 @@ void update_device_dl() {
             if (!is_usb_device(ent->d_name)) {
                 continue;
             }
-            dl_add_entry(devices_dl, "%s", ent->d_name);
+            dl_add_entry(devices_dl, DLEP_NONE,"%s", ent->d_name);
         }
         closedir(dir);
     } else {
         log_message("Could not open USB devices directory");
     }
 
-    dl_draw(devices_dl, left_win);
+    dl_draw(devices_dl, left_win, DLRP_NONE);
 }
 
 void update_atr_dl() {
@@ -233,18 +249,18 @@ void update_atr_dl() {
         {"maxchild", "Max Children", NULL},
         {NULL, NULL, NULL}
     };
-    dl_add_entry(atr_dl, "@---USB DEVICE ATTRIBUTES---");
-    dl_add_entry(atr_dl, "Device name: %s", selection_lw.device_name);
+    dl_add_entry(atr_dl, DLEP_CENTERED,"---USB DEVICE ATTRIBUTES---");
+    dl_add_entry(atr_dl, DLEP_NONE,"Device name: %s", selection_lw.device_name);
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
     char count = 0;
     for (; args[count].attribute_name ; count++) {
-        print_attribute_value(path, args[count], right_win);
+        print_attribute_value(path, args[count], atr_dl);
     }
 
     if (is_storage_device(selection_lw.device_name)) {
         print_storage_device_info();
-        dl_add_entry(atr_dl, "Block name: %s", selection_lw.block_name);
+        dl_add_entry(atr_dl, DLEP_NONE, "Block name: %s", selection_lw.block_name);
         get_mount_points(); 
     }
     box(right_win, 0, 0);
@@ -257,12 +273,9 @@ int main() {
     init_globals();
 
     selection_lw.window = device_list;
-    selection_lw.y = WIDOW_TOP_PADDING;
     selection_lw.mount_path[0] = 0;
-    while (1) {
+    while (is_open) {
         int key = getch();
-        if (key == 274) break;  //F10
-
         update_keys(key);
         update();
 

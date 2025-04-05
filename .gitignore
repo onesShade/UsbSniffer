@@ -6,7 +6,7 @@
 *.a
 *.so
 *.exe
-
+*.txt
 *.log
 
 .vscode/

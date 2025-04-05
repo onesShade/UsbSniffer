@@ -15,13 +15,13 @@ typedef struct {
     Window window;
     char device_name[PATH_MAX];
     char block_name[PATH_MAX];
+    char block_path[PATH_MAX];
     char mount_path[PATH_MAX];
-    int y;
 } Selection;
 
 extern Selection selection_lw;
-
 extern int update_cycle_counter;
+extern char is_open;
 
 extern WINDOW *left_win;
 extern WINDOW *right_win;
