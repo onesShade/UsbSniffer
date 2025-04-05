@@ -3,6 +3,7 @@
 
 #include <ncurses.h>
 #include "defines.h"
+#include "dispayList.h"
 
 typedef enum {
     device_list,
@@ -26,23 +27,16 @@ typedef struct {
     int curr_y;
 } ILInfo;
 
-typedef struct {
-    int curr;
-    int len;
-    char selectable;
-} ListInfo;
-
 extern Selection selection_lw;
 extern DLInfo dl_info;
 extern ILInfo il_info;
-
-extern ListInfo left_win_info;
-extern ListInfo right_win_info;
 
 extern WINDOW *left_win;
 extern WINDOW *right_win;
 extern WINDOW *bottom_win;
 extern WINDOW *popup_win;
+
+extern DispayList* devices_dl;
 
 typedef struct {
     const char *attribute_name;

@@ -1,10 +1,13 @@
-#include <linux/limits.h>
 #define _POSIX_C_SOURCE 200809L
+#include <linux/limits.h>
+#include "fileSystem.h"
+
+#include "dispayList.h"
+#include <string.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -16,7 +19,6 @@
 #include "util.h"
 #include "defines.h"
 #include "globals.h"
-#include "fileSystem.h"
 
 void print_attribute_value(const char* dir,const Atr_Print_arg arg, int y, WINDOW *win) {
     char buffer[MAX_READ];
@@ -48,7 +50,7 @@ int print_storage_device_info() {
         {NULL, NULL}
     };
 
-    snprintf(path_temp, sizeof(path_temp), "%s%s", SYSFS_USB_DEVICES, selection_lw.device_name);
+    snprintf(path_temp, sizeof(path_temp), "%s%s", SYSFS_USB_DEVICES, dl_get_selected(devices_dl));
     if (!traverse_path(path_temp, traverce_arg, path_block)) {
         return 0;
     }
@@ -65,7 +67,7 @@ int print_storage_device_info() {
     sscanf(buffer, "%ld", &size);
     mvwprintw(right_win, il_info.curr_y++, 1, "Size: %ld MB\n", size * 512 / 1024 / 1024);
 
-    snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
+    snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, dl_get_selected(devices_dl));
     print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL}, il_info.curr_y++, right_win);
     return 1;
 }
@@ -126,15 +128,15 @@ void draw_right_window() {
         {NULL, NULL, NULL}
     };
 
-    mvwprintw(right_win, il_info.curr_y++, 1, "Device name: %s", selection_lw.device_name);
+    mvwprintw(right_win, il_info.curr_y++, 1, "Device name: %s", dl_get_selected(devices_dl));
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
+    snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, dl_get_selected(devices_dl));
     char count = 0;
     for (; args[count].attribute_name ; count++) {
         print_attribute_value(path, args[count], il_info.curr_y++, right_win);
     }
 
-    if (is_storage_device(selection_lw.device_name)) {
+    if (is_storage_device(dl_get_selected(devices_dl))) {
         print_storage_device_info();
         mvwprintw(right_win, il_info.curr_y++, 1, "Block name: %s", selection_lw.block_name);
         get_mount_points();
@@ -143,10 +145,12 @@ void draw_right_window() {
     wrefresh(right_win);
 }
 
+void update_left_window();
+
 void draw_left_window() {
     werase(left_win);
     box(left_win, 0, 0);
-
+    /*
     DIR *dir;
     struct dirent *ent;
 
@@ -174,15 +178,17 @@ void draw_left_window() {
     } else {
         log_message("Could not open USB devices directory");
     }
-    wrefresh(left_win);
     dl_info.len = i;
+    */
+    update_left_window();
+    wrefresh(left_win);
 }
 
 void draw_bottom_window() {
     werase(bottom_win);
     int x = -16;
     
-    if (is_storage_device(selection_lw.device_name)) {
+    if (is_storage_device(dl_get_selected(devices_dl))) {
         mvwprintw(bottom_win, 0, x += 16, "F2 - TEST");
     }
     mvwprintw(bottom_win, 0, x += 16, "F10 - EXIT");
@@ -205,7 +211,7 @@ void update(int key) {
         reinit_windows();
     }
     
-    if (selection_lw.window == device_list) {
+    if (selection_lw.window == device_list) { /*
         if (key == KEY_DOWN && selection_lw.y <= dl_info.len + WIDOW_TOP_PADDING) {
             if (selection_lw.y == dl_info.len + WIDOW_TOP_PADDING - 1) 
                 selection_lw.y = WIDOW_TOP_PADDING;
@@ -220,8 +226,15 @@ void update(int key) {
                 selection_lw.y--;
             selection_lw.mount_path[0] = 0;
         }
+        */
+        if (key == KEY_DOWN) {
+            dl_iterate(devices_dl, +1);   
+        }
+        if (key == KEY_UP) {
+            dl_iterate(devices_dl, -1);   
+        }
 
-        if(key == 266 && is_storage_device(selection_lw.device_name)) {   //F2
+        if(key == 266 && is_storage_device(dl_get_selected(devices_dl))) {   //F2
             selection_lw.window = storage_test_settings;
             test_storage(selection_lw.mount_path, 100);
         }
@@ -233,6 +246,28 @@ void update(int key) {
     if (selection_lw.window == storage_test_settings) {
         update_st_test_settings(key);
     }
+}
+
+void update_left_window() {
+    DIR *dir;
+    struct dirent *ent;
+    dl_clear(devices_dl);
+
+    if ((dir = opendir(SYSFS_USB_DEVICES)) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            if (ent->d_name[0] == '.') continue;
+            
+            if (!is_usb_device(ent->d_name)) {
+                continue;
+            }
+            dl_add_entry(devices_dl, "%s", ent->d_name);
+        }
+        closedir(dir);
+    } else {
+        log_message("Could not open USB devices directory");
+    }
+
+    dl_draw(devices_dl, left_win);
 }
 
 int main() {

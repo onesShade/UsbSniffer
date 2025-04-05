@@ -1,4 +1,5 @@
 #include "globals.h"
+#include "dispayList.h"
 #include <ncurses.h>
 
 Selection selection_lw;
@@ -10,14 +11,14 @@ WINDOW *right_win;
 WINDOW *bottom_win;
 WINDOW *popup_win;
 
-ListInfo left_win_info;
-ListInfo right_win_info;
+DispayList* devices_dl;
 
 void init_globals() {
     left_win = NULL;
     right_win = NULL;
     bottom_win = NULL;
     popup_win = NULL;
+    devices_dl = dl_init(TRUE, 1, 1);
     reinit_windows();
 }
 
@@ -38,4 +39,5 @@ void free_globals() {
     delwin(bottom_win);
     delwin(popup_win);
     endwin();  
+    dl_free(devices_dl);
 }

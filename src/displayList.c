@@ -6,16 +6,18 @@
 #include <stdlib.h>
 #include "defines.h"
 
-DispayList* dl_init(char selectable) {
+DispayList* dl_init(char selectable, int x, int y) {
     DispayList* dl = malloc(sizeof(DispayList));
     dl->selectable = selectable;
     dl->selected = 0;
+    dl->x = x;
+    dl->y = y;
     dl->entryes = vector_init(MAX_DL_STR, 16);
     return dl;
 }
 
 void dl_iterate(DispayList* dl, int move) {
-    if((move != 1 && move != -1) || dl->selectable) {
+    if((move != 1 && move != -1) || !dl->selectable) {
         log_message("dl_iterate exception");
         return;
     }
@@ -67,4 +69,8 @@ char* dl_get_selected(DispayList* dl) {
         return NULL;
     }
     return vector_at(dl->entryes, dl->selected);
+}
+
+void dl_free(DispayList* dl) {
+    vector_free(dl->entryes);
 }
