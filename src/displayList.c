@@ -7,12 +7,13 @@
 #include "defines.h"
 #include <string.h>
 
-DispayList* dl_init(char selectable, int x, int y) {
+DispayList* dl_init(char selectable, char horizontal_shift, int x, int y) {
     DispayList* dl = malloc(sizeof(DispayList));
     dl->selectable = selectable;
     dl->selected = 0;
     dl->x = x;
     dl->y = y;
+    dl->horizontal_shift = horizontal_shift;
     dl->entryes = vector_init(sizeof(DLE), 16);
     return dl;
 }
@@ -56,26 +57,50 @@ void dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
 void dl_draw(DispayList* dl, WINDOW* win, DLRProperties dlrp) {
     while (dl->selectable && dl->selected >= dl->entryes->size && dl->entryes->size) 
         dl->selected--;
+
     DLR dlr = *((DLR*)&dlrp);
-    for(size_t line = 0; line < dl->entryes->size; line++) {
+    if (!dl->horizontal_shift) {
+        for(size_t line = 0; line < dl->entryes->size; line++) {
 
-        int x = dl->x;
-        int y = dl->y + line;
-
-        DLE* dle = (DLE*)vector_at(dl->entryes, line);
-
-        if(dle->prop.centered) {
-            x = getmaxx(win) / 2 - strlen((const char*)vector_at(dl->entryes, line)) / 2;
+            int x = dl->x;
+            int y = dl->y + line;
+    
+            DLE* dle = (DLE*)vector_at(dl->entryes, line);
+    
+            if(dle->prop.centered) {
+                x = getmaxx(win) / 2 - strlen((const char*)vector_at(dl->entryes, line)) / 2;
+            }
+    
+            if (dl->selectable && line == dl->selected && !dlr.hide_selection) {
+                wattron(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
+                mvwprintw(win, y, x, "%s", dle->body);
+                wattroff(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
+            } else {
+                mvwprintw(win, y, x, "%s", dle->body);
+            }
         }
+    } else {
+        for(size_t col = 0; col < dl->entryes->size; col++) {
 
-        if (dl->selectable && line == dl->selected && !dlr.hide_selection) {
-            wattron(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
-            mvwprintw(win, y, x, "%s", dle->body);
-            wattroff(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
-        } else {
-            mvwprintw(win, y, x, "%s", dle->body);
+            int x = dl->x + col * dl->horizontal_shift;
+            int y = dl->y;
+    
+            DLE* dle = (DLE*)vector_at(dl->entryes, col);
+    
+            if(dle->prop.centered) {
+                x = getmaxx(win) / 2 - strlen((const char*)vector_at(dl->entryes, col)) / 2;
+            }
+    
+            if (dl->selectable && col == dl->selected && !dlr.hide_selection) {
+                wattron(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
+                mvwprintw(win, y, x, "%s", dle->body);
+                wattroff(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
+            } else {
+                mvwprintw(win, y, x, "%s", dle->body);
+            }
         }
     }
+
 }
 
 char* dl_get_selected(DispayList* dl) {

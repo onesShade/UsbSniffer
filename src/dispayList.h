@@ -20,8 +20,9 @@ typedef struct {
     Vector* entryes;
     size_t selected;
     char selectable;
+    char horizontal_shift;
     int x;
-     int y;
+    int y;
 } DispayList;
 
 typedef struct {
@@ -40,7 +41,7 @@ typedef enum {
     DLRP_HIDE_SELECTION = 1,
 }DLRProperties;
 
-DispayList* dl_init(char selectable, int x, int y);
+DispayList* dl_init(char selectable, char horizontal_shift, int x, int y);
 
 void dl_free(DispayList* dl);
 

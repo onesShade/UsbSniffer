@@ -87,6 +87,8 @@ void get_mount_points() {
         return;
     }
 
+    dl_add_entry(mount_point_dl, DLEP_CENTERED | DLEP_UNSELECTABLE, "---MOUNT POINTS---");
+
     char mounted = 0;
     while (fgets(buffer, sizeof(buffer), mounts)) {
         if ((strcspn(buffer, "\n") < strnlen(buffer, MAX_READ)))
@@ -97,10 +99,7 @@ void get_mount_points() {
             char path_mount[PATH_MAX];
             char file_system[MAX_READ];
             
-            if(!mounted) {
-                dl_add_entry(mount_point_dl, DLEP_CENTERED | DLEP_UNSELECTABLE, "---MOUNT POINTS---");
-            }
-
+        
             sscanf(buffer, "%s%s%s", block_path, path_mount, file_system);
             use_octal_escapes(path_mount);
             
@@ -112,7 +111,7 @@ void get_mount_points() {
             sscanf(buffer, "%ld", &size);
             
             dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. FS: %s\t\tSIZE: %ld MB", mounted, file_system, size * 512 / 1024 / 1024);
-            dl_add_entry(mount_point_dl, DLEP_NONE,"  %s", path_mount);
+            dl_add_entry(mount_point_dl, DLEP_NONE,"%s", path_mount);
 
             mounted++;
             strcpy(selection_lw.mount_path, path_mount);
@@ -145,9 +144,15 @@ void draw_left_window() {
 void draw_bottom_window() {
     werase(bottom_win);
     int x = -16;
-    
-    if (is_storage_device(selection_lw.device_name)) {
-        mvwprintw(bottom_win, 0, x += 16, "F2 - TEST");
+    if(selection_lw.window == device_list) {
+        if (is_storage_device(selection_lw.device_name)) {
+            mvwprintw(bottom_win, 0, x += 16, "F2 - TEST");
+        }
+    }
+    if(selection_lw.window == storage_test_settings) {
+        mvwprintw(bottom_win, 0, x += 16, "M - MOUNT P.");
+        mvwprintw(bottom_win, 0, x += 16, "B - FILE SIZE");
+        mvwprintw(bottom_win, 0, x += 16, "N - PASSES");
     }
     mvwprintw(bottom_win, 0, x += 16, "F10 - EXIT");
     wrefresh(bottom_win);
@@ -156,16 +161,24 @@ void draw_bottom_window() {
 void draw_popup_window() {
     werase(popup_win);
     if (is_storage_device(selection_lw.device_name)) {
-        dl_set_pos(mount_point_dl, 1, 1);
+        dl_set_pos(mount_point_dl, 4, 1);
         dl_draw(mount_point_dl, popup_win, DLRP_NONE);
     }
+    dl_set_pos(test_size_sel_dl, test_size_sel_dl->x, mount_point_dl->y + mount_point_dl->entryes->size + 1);
+    dl_draw(test_size_sel_dl, popup_win, DLRP_NONE);
+
+    dl_set_pos(test_passes_dl, test_passes_dl->x, test_size_sel_dl->y + 2);
+    dl_draw(test_passes_dl, popup_win, DLRP_NONE);
+
+    mvwprintw(popup_win, test_passes_dl->y + 4, 1, "%s", testPropsStr);
+
     box(popup_win, 0, 0);
     wrefresh(popup_win);
 }
 
-void update_keys(int key) {
-    if (key == 274) {
-        is_open = FALSE;  //F10
+void update_keys(int key) { 
+    if (key == KEY_F(10)) {
+        is_open = FALSE;
     }
 
     if (key == KEY_RESIZE) {
@@ -187,12 +200,12 @@ void update_keys(int key) {
         }
         
         if (key == 'q') {
-            is_open = FALSE;  //F10
+            is_open = FALSE;  
         }
 
-        if(key == 266 && is_storage_device(selection_lw.device_name)) {   //F2
+        if(key == KEY_F(2) && is_storage_device(selection_lw.device_name)) {
             selection_lw.window = storage_test_settings;
-            //test_storage(selection_lw.mount_path, 100);
+            set_test_props();
         }
     }
     if (selection_lw.window == storage_test_settings) {

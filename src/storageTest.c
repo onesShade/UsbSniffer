@@ -1,4 +1,6 @@
+#include <linux/limits.h>
 #define _POSIX_C_SOURCE 199309L 
+#include "vector.h"
 
 #include "dispayList.h"
 #include "storageTest.h"
@@ -20,28 +22,88 @@
 #include "defines.h"
 #include "globals.h"
 
-void test_storage(const char *mount_point, int size_mb) {
-    char file_path[256];
+TestProps testProps;
+char testPropsStr[MAX_READ];
+
+void set_test_props() {
+    sscanf(vector_at(test_size_sel_dl->entryes, test_size_sel_dl->selected), 
+            "%d", &testProps.data_size);
+    sscanf(vector_at(test_passes_dl->entryes, test_passes_dl->selected), 
+            "%d", &testProps.number_of_passes);
+
+
+    snprintf(testPropsStr, MAX_READ, "Press [ENTER] to test on %d MB file %d times", testProps.data_size, testProps.number_of_passes);
+}
+
+void print_loading_bar(int done, int all) {
+    float percentage = (float)done / (float)all;
+    char bar[32];
+
+    bar[4] = '[';
+    for(int i = 0; i < 10; i++)
+        if(percentage > 1.f / i)
+            bar[5+i] = '=';
+        else
+            bar[5+i] = ' ';
+    bar[14] = ']';
+    printf("%s\r", bar);
+}
+
+
+void test_write(const char* path, char* data) {
+    FILE* file = fopen(path, "wb");
+    if (!file) {
+        fprintf(stderr, "File open exception: %s\n", strerror(errno));
+        return;
+    }
+
+    size_t total_size = (size_t)testProps.data_size * 1024 * 1024;
+
+    size_t written = fwrite(data, 1, total_size, file);
+    if (written != total_size) {
+        fprintf(stderr, "Write exception: %s\n", strerror(errno));
+        fclose(file);
+        return;
+    }
+
+    fflush(file);
+    fclose(file);
+}
+
+void test_read(const char* path, char* out) {
+    FILE* file = fopen(path, "rb");
+    if (!file) {
+        fprintf(stderr, "File open exception: %s\n", strerror(errno));
+        return;
+    }
+
+    size_t total_size = (size_t)testProps.data_size * 1024 * 1024;
+
+    size_t bytes_read = fread(out, 1, total_size, file);
+    if (bytes_read != total_size) {
+        if (feof(file)) {
+            fprintf(stderr, "Unexpected end of file\n");
+        } else if (ferror(file)) {
+            fprintf(stderr, "Read exception: %s\n", strerror(errno));
+        }
+    }
+
+    fclose(file);
+}
+
+void run_w_r_test(const char *mount_point) {
+    char file_path[PATH_MAX];
+
     snprintf(file_path, sizeof(file_path), "%s/%s", mount_point, TEST_FILE_NAME);
     struct timespec start, end;
     double elapsed_sec;
 
     long seed = time(NULL);
-    printf("Creating temp test file of %d mb at %s...\r\n", size_mb, mount_point);
+    printf("Creating temp test file of %d MB %d times at %s\r\n", testProps.data_size, testProps.number_of_passes, file_path);
 
-    int fd = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd == -1) {
-        fprintf(stderr, "File open exception: %s\r\n", strerror(errno));
-        return;
-    }
-
-    size_t total_size = (size_t)size_mb * 1024 * 1024;
-    char *buffer = malloc(total_size);
-    if (!buffer) {
-        fprintf(stderr, "Memory allocation exception\r\n");
-        close(fd);
-        return;
-    }
+    size_t total_size = (size_t)testProps.data_size * 1024 * 1024;
+    char* buffer = malloc(total_size);
+    char* out_data = malloc(total_size);
 
     srand(seed);
     for (size_t i = 0; i < total_size; i++) {
@@ -49,63 +111,35 @@ void test_storage(const char *mount_point, int size_mb) {
     }
 
     clock_gettime(CLOCK_REALTIME, &start);
-
-    ssize_t written = write(fd, buffer, total_size);
-    if (written != total_size) {
-        fprintf(stderr, "Write exception: %s\r\n", strerror(errno));
-        free(buffer);
-        close(fd);
-        return;
+    for(int i = 0; i < testProps.number_of_passes; i++) {
+        printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
+        test_write(file_path, buffer);
     }
-
-    free(buffer);
-    fsync(fd); 
-    close(fd);
-
-       
     clock_gettime(CLOCK_REALTIME, &end);
-    elapsed_sec = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec) * 1.0e-9;
+
+    elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
     printf("Write time: %.3f sec\r\n", elapsed_sec);
-    printf("Write speed: %.3f mb/s\r\n", (double)size_mb / elapsed_sec);
+    printf("Write speed: %.3f MB/s\r\n", (double)testProps.data_size * testProps.number_of_passes / elapsed_sec);
 
-    printf("Reading and examination...\r\n");
-
-    fd = open(file_path, O_RDONLY);
-    if (fd == -1) {
-        fprintf(stderr, "File open exception: %s\r\n", strerror(errno));
-        return;
-    }
-
-    buffer = malloc(total_size);
-    if (!buffer) {
-        fprintf(stderr, "Memory allocation exception\r\n");
-        close(fd);
-        return;
-    }
-
+    printf("Reading and verification...\r\n");
     clock_gettime(CLOCK_REALTIME, &start);
+    test_read(file_path, out_data);
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
+    printf("Read time: %.3f sec\r\n", elapsed_sec);
+    printf("Read speed: %.3f MB/s\r\n", (double)testProps.data_size / elapsed_sec);
+
+
     int errors = 0;
-    ssize_t bytes_read = read(fd, buffer, total_size);
-    if (bytes_read != total_size) {
-        fprintf(stderr, "Read exception: %s\r\n", strerror(errno));
-    }
-    srand(seed);
     for (size_t j = 0; j < total_size; j++) {
-        char expected = rand() % 256;
-        if (buffer[j] != expected) {
+        if (buffer[j] != out_data[j]) {
             errors++;
         }
     }
 
-
     free(buffer);
-    close(fd);
-
-    clock_gettime(CLOCK_REALTIME, &end);
-    elapsed_sec = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec) * 1.0e-9;
-    printf("Read time: %.3f sec\r\n", elapsed_sec);
-    printf("Read speed: %.3f mb/s\r\n", (double)size_mb / elapsed_sec);
-
+    free(out_data);
 
     if (errors > 0) {
         printf("Errors found: %d\r\n", errors);
@@ -113,12 +147,14 @@ void test_storage(const char *mount_point, int size_mb) {
         printf("Test passed!\r\n");
     }
 
-    unlink(file_path);
+    printf("Press [ENTER] to exit...\r\n");
+    while (getchar() != '\r');
 
-    printf("Press space to exit...\r\n");
-    while (getch() != ' ');
-
+    if (remove(file_path)) {
+        fprintf(stderr, "Failed to delete test file: %s\r\n", strerror(errno));
+    }
 }
+
 
 void use_octal_escapes(char* str) {
     char buffer[PATH_MAX];
@@ -153,4 +189,15 @@ void update_st_test_settings(int key) {
     if (key == 'm') {
         dl_iterate(mount_point_dl, +1);
     }
+    if (key == 'b') {
+        dl_iterate(test_size_sel_dl, +1);
+    }
+    if (key == 'n') {
+        dl_iterate(test_passes_dl, +1);
+    }
+    if (key == '\n') {
+        run_w_r_test(vector_at(mount_point_dl->entryes, mount_point_dl->selected));
+        selection_lw.window = device_list;
+    }
+    set_test_props();
 }
