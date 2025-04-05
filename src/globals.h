@@ -32,7 +32,8 @@ extern WINDOW *bottom_win;
 extern WINDOW *popup_win;
 
 extern DispayList* devices_dl;
-
+extern DispayList* atr_dl;
+extern DispayList* mount_p_dl;
 typedef struct {
     const char *attribute_name;
     const char *print_prefix;

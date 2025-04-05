@@ -12,6 +12,8 @@ WINDOW *bottom_win;
 WINDOW *popup_win;
 
 DispayList* devices_dl;
+DispayList* atr_dl;
+DispayList* mount_p_dl;
 
 void init_globals() {
     left_win = NULL;
@@ -19,6 +21,8 @@ void init_globals() {
     bottom_win = NULL;
     popup_win = NULL;
     devices_dl = dl_init(TRUE, 1, 1);
+    atr_dl = dl_init(FALSE, 1, 1);
+    mount_p_dl = dl_init(FALSE, 1, 1);
     reinit_windows();
 }
 
@@ -40,4 +44,6 @@ void free_globals() {
     delwin(popup_win);
     endwin();  
     dl_free(devices_dl);
+    dl_free(atr_dl);
+    dl_free(mount_p_dl);
 }
