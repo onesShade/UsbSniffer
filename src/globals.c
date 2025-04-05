@@ -3,7 +3,7 @@
 #include <ncurses.h>
 
 Selection selection_lw;
-DLInfo dl_info;
+
 ILInfo il_info;
 
 WINDOW *left_win;

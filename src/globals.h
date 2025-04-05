@@ -20,15 +20,10 @@ typedef struct {
 } Selection;
 
 typedef struct {
-    int len;
-} DLInfo;
-
-typedef struct {
     int curr_y;
 } ILInfo;
 
 extern Selection selection_lw;
-extern DLInfo dl_info;
 extern ILInfo il_info;
 
 extern WINDOW *left_win;
