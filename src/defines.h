@@ -2,6 +2,7 @@
 #define SYS_BLOCK "/sys/block/"
 #define PROC_MOUNTS "/proc/mounts"
 #define MAX_READ 256
+#define MAX_DL_STR 256
 #define WIDOW_TOP_PADDING 2
 #define NDEBUG
 #define SELECTED_TEXT_COLOR 1
