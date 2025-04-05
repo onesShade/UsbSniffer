@@ -61,7 +61,7 @@ int print_storage_device_info() {
     snprintf(selection_lw.block_name, PATH_MAX, "/%s", path_temp);
     dl_add_entry(atr_dl,DLEP_NONE,  "Block path is :");
     dl_add_entry(atr_dl,DLEP_NONE,  "%s", path_block);
-
+    strncpy(selection_lw.block_path, path_block, PATH_MAX);
     
     snprintf(path_temp, sizeof(path_temp), "%s/size", path_block);
     read_usb_attribute(path_temp, buffer, sizeof(buffer));
@@ -79,7 +79,8 @@ void get_mount_points() {
     if (!is_storage_device(selection_lw.device_name))
         return;
 
-    char buffer[MAX_READ];
+    char buffer[PATH_MAX];
+    char buffer_extra[PATH_MAX];
 
     FILE* mounts = fopen(PROC_MOUNTS, "r");
     if(!mounts) {
@@ -96,16 +97,21 @@ void get_mount_points() {
             char path_mount[PATH_MAX];
             char file_system[MAX_READ];
             
-            sscanf(buffer, "%s%s%s", block_path, path_mount, file_system);
-            use_octal_escapes(path_mount);
-            
-            
-
             if(!mounted) {
                 dl_add_entry(mount_point_dl, DLEP_CENTERED | DLEP_UNSELECTABLE, "---MOUNT POINTS---");
             }
 
-            dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. fs: %s", mounted, file_system);
+            sscanf(buffer, "%s%s%s", block_path, path_mount, file_system);
+            use_octal_escapes(path_mount);
+            
+            extract_top_dir(block_path, buffer);
+
+            snprintf(buffer_extra, sizeof(buffer_extra), "%s/%s/size", selection_lw.block_path, buffer);
+            read_usb_attribute(buffer_extra, buffer, sizeof(buffer));
+            unsigned long int size = 0;
+            sscanf(buffer, "%ld", &size);
+            
+            dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. FS: %s\t\tSIZE: %ld MB", mounted, file_system, size * 512 / 1024 / 1024);
             dl_add_entry(mount_point_dl, DLEP_NONE,"  %s", path_mount);
 
             mounted++;
