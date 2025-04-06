@@ -93,7 +93,7 @@ void get_mount_points() {
 
     size_t mount_count = 0;
     while (fgets(buffer, sizeof(buffer), mounts) && mount_count < MAX_MOUNT_POINTS) {
-        if ((strcspn(buffer, "\n") < strnlen(buffer, MAX_READ)))
+        if (strcspn(buffer, "\n") < strnlen(buffer, MAX_READ))
             buffer[strcspn(buffer, "\n")] = 0;
 
         if (strstr(buffer, selection_lw.block_name) != NULL) {

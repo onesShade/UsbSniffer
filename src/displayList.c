@@ -123,8 +123,8 @@ void dl_set_pos(DispayList* dl, int x, int y) {
 }
 
 int string_compare_dle(const void *a, const void *b) {
-    DLE* f = (DLE*)a;
-    DLE* s = (DLE*)b;
+    const DLE* f = (DLE*)a;
+    const DLE* s = (DLE*)b;
     return str_compare_fun(f->body, s->body);
 }
 
@@ -134,6 +134,7 @@ int natural_compare_dle(const void *a, const void *b) {
     const char *s1 = first->body;
     const char *s2 = second->body;
 
+    
     while (*s1 && *s2) {
         if (isdigit(*s1) && isdigit(*s2)) {
             long num1 = strtol(s1, (char**)&s1, 10);
@@ -142,7 +143,7 @@ int natural_compare_dle(const void *a, const void *b) {
             if (num1 != num2)
                 return (num1 > num2) - (num1 < num2);
         } else {
-            // Compare non-digits lexically
+
             if (*s1 != *s2)
                 return (*s1 > *s2) - (*s1 < *s2);
             s1++;
