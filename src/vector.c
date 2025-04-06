@@ -1,8 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "util.h"
 #include "vector.h"
-
+#include "defines.h"
 
 Vector* vector_init(size_t elem_size, size_t initial_size) {
     Vector* v = malloc(sizeof(Vector));
@@ -44,4 +46,25 @@ void* vector_at(Vector* v, size_t index) {
 
 void vector_clear(Vector* v) {
     v->size = 0;
+}
+
+int str_compare_fun(const void *a, const void *b) {
+    return strcmp((const char*)a, (const char*)b);
+}
+
+int str_compare_second_substr_fun(const void *a, const void *b) {
+    char tmp[MAX_READ];
+    char f[MAX_READ];
+    char s[MAX_READ];
+    
+    if(sscanf(a, "%s%s", tmp, f) != 2) return 0; 
+    if(sscanf(b, "%s%s", tmp, s) != 2) return 0;
+
+    log_message("cmp of %s vs %s", f, s);
+    return strcmp(f, s);
+}
+
+
+void vector_sort(Vector* v, __compar_fn_t compare) {
+    qsort(v->data, v->size , v->element_size, compare);
 }

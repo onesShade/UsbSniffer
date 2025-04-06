@@ -19,4 +19,10 @@ void* vector_at(Vector* v, size_t index);
 
 void vector_clear(Vector* v);
 
+void vector_sort(Vector* v, __compar_fn_t compare);
+
+int str_compare_fun(const void *a, const void *b);
+
+int str_compare_second_substr_fun(const void *a, const void *b);
+
 #endif

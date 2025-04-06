@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include "defines.h"
 #include <string.h>
+#include <ctype.h>
+
 
 DispayList* dl_init(char selectable, char horizontal_shift, int x, int y) {
     DispayList* dl = malloc(sizeof(DispayList));
@@ -118,4 +120,38 @@ void dl_free(DispayList* dl) {
 void dl_set_pos(DispayList* dl, int x, int y) {
     dl->x = x;
     dl->y = y;
+}
+
+int string_compare_dle(const void *a, const void *b) {
+    DLE* f = (DLE*)a;
+    DLE* s = (DLE*)b;
+    return str_compare_fun(f->body, s->body);
+}
+
+int natural_compare_dle(const void *a, const void *b) {
+    const DLE *first = (const DLE*)a;
+    const DLE *second = (const DLE*)b;
+    const char *s1 = first->body;
+    const char *s2 = second->body;
+
+    while (*s1 && *s2) {
+        if (isdigit(*s1) && isdigit(*s2)) {
+            long num1 = strtol(s1, (char**)&s1, 10);
+            long num2 = strtol(s2, (char**)&s2, 10);
+            
+            if (num1 != num2)
+                return (num1 > num2) - (num1 < num2);
+        } else {
+            // Compare non-digits lexically
+            if (*s1 != *s2)
+                return (*s1 > *s2) - (*s1 < *s2);
+            s1++;
+            s2++;
+        }
+    }
+    return (*s1 != '\0') - (*s2 != '\0');
+}
+
+void dl_sort_natural(DispayList* dl) {
+    vector_sort(dl->entryes, natural_compare_dle);
 }

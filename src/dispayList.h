@@ -57,4 +57,6 @@ char* dl_get_selected(DispayList* dl);
 
 void dl_set_pos(DispayList* dl, int x, int y);
 
+void dl_sort_natural(DispayList* dl);
+
 #endif

@@ -1,3 +1,4 @@
+#include <stddef.h>
 #define _POSIX_C_SOURCE 200809L
 #include "dispayList.h"
 
@@ -22,17 +23,18 @@
 void update_atr_dl();
 void update_device_dl();
 
-void print_attribute_value(const char* dir,const Atr_Print_arg arg, DispayList *dl) {
+int print_attribute_value(const char* dir,const Atr_Print_arg arg, DispayList *dl) {
     char buffer[MAX_READ];
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s%s", dir, arg.attribute_name);
     read_usb_attribute(path, buffer, sizeof(buffer));
     if(!buffer[0]) {
         dl_add_entry(dl, DLEP_NONE,"%s: ---", arg.print_prefix);
-        return;
+        return 0;
     }
     dl_add_entry(dl, DLEP_NONE,"%s: %s %s",
          arg.print_prefix, buffer, arg.print_postfix ? arg.print_postfix : "");
+    return 1;
 }
 
 int print_storage_device_info() {
@@ -81,7 +83,7 @@ void get_mount_points() {
 
     char buffer[PATH_MAX];
     char buffer_extra[PATH_MAX];
-
+    char mount_buffers[MAX_MOUNT_POINTS][PATH_MAX];
     FILE* mounts = fopen(PROC_MOUNTS, "r");
     if(!mounts) {
         return;
@@ -89,35 +91,41 @@ void get_mount_points() {
 
     dl_add_entry(mount_point_dl, DLEP_CENTERED | DLEP_UNSELECTABLE, "---MOUNT POINTS---");
 
-    char mounted = 0;
-    while (fgets(buffer, sizeof(buffer), mounts)) {
+    size_t mount_count = 0;
+    while (fgets(buffer, sizeof(buffer), mounts) && mount_count < MAX_MOUNT_POINTS) {
         if ((strcspn(buffer, "\n") < strnlen(buffer, MAX_READ)))
             buffer[strcspn(buffer, "\n")] = 0;
 
         if (strstr(buffer, selection_lw.block_name) != NULL) {
-            char block_path[MAX_READ];
-            char path_mount[PATH_MAX];
-            char file_system[MAX_READ];
-            
-        
-            sscanf(buffer, "%s%s%s", block_path, path_mount, file_system);
-            use_octal_escapes(path_mount);
-            
-            extract_top_dir(block_path, buffer);
-
-            snprintf(buffer_extra, sizeof(buffer_extra), "%s/%s/size", selection_lw.block_path, buffer);
-            read_usb_attribute(buffer_extra, buffer, sizeof(buffer));
-            unsigned long int size = 0;
-            sscanf(buffer, "%ld", &size);
-            
-            dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. FS: %s\t\tSIZE: %ld MB", mounted, file_system, size * 512 / 1024 / 1024);
-            dl_add_entry(mount_point_dl, DLEP_NONE,"%s", path_mount);
-
-            mounted++;
-            strcpy(selection_lw.mount_path, path_mount);
+            strncpy(mount_buffers[mount_count], buffer, PATH_MAX);
+            mount_count++;
         }
     }
-    if (!mounted) {
+    if(mount_count)
+        qsort(mount_buffers, mount_count, sizeof(mount_buffers[0]), str_compare_second_substr_fun);
+
+    for(size_t mp = 0; mp < mount_count; mp++) {
+        char block_path[MAX_READ];
+        char path_mount[PATH_MAX];
+        char file_system[MAX_READ];
+        
+        sscanf(mount_buffers[mp], "%s%s%s", block_path, path_mount, file_system);
+        use_octal_escapes(path_mount);
+        
+        extract_top_dir(block_path, buffer);
+
+        snprintf(buffer_extra, sizeof(buffer_extra), "%s/%s/size", selection_lw.block_path, buffer);
+        read_usb_attribute(buffer_extra, buffer, sizeof(buffer));
+        unsigned long int size = 0;
+        sscanf(buffer, "%ld", &size);
+        
+        dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. FS: %s\t\tSIZE: %ld MB", mp + 1, file_system, size * 512 / 1024 / 1024);
+        dl_add_entry(mount_point_dl, DLEP_NONE,"%s", path_mount);
+
+        strcpy(selection_lw.mount_path, path_mount);
+    }
+
+    if (!mount_count) {
         dl_add_entry(mount_point_dl, DLEP_NONE, "[none]");
     }
     fclose(mounts);
@@ -137,7 +145,8 @@ void draw_right_window() {
 void draw_left_window() {
     werase(left_win);
     box(left_win, 0, 0);
-    update_device_dl();
+    //update_device_dl();
+    dl_draw(devices_dl, left_win, DLRP_NONE);
     wrefresh(left_win);
 }
 
@@ -245,7 +254,8 @@ void update_device_dl() {
         log_message("Could not open USB devices directory");
     }
 
-    dl_draw(devices_dl, left_win, DLRP_NONE);
+    dl_sort_natural(devices_dl);
+    //dl_draw(devices_dl, left_win, DLRP_NONE);
 }
 
 void update_atr_dl() {
@@ -273,11 +283,12 @@ void update_atr_dl() {
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
     char count = 0;
+    int atr_c = 0;
     for (; args[count].attribute_name ; count++) {
-        print_attribute_value(path, args[count], atr_dl);
+        atr_c += print_attribute_value(path, args[count], atr_dl);
     }
 
-    if (is_storage_device(selection_lw.device_name)) {
+    if (is_storage_device(selection_lw.device_name) && atr_c > 3) {
         print_storage_device_info();
         dl_add_entry(atr_dl, DLEP_NONE, "Block name: %s", selection_lw.block_name);
         get_mount_points(); 

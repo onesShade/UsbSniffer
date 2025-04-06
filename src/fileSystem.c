@@ -89,7 +89,7 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
             break;
         }
     }
-    
+
     closedir(dir);
     return found;
 }
