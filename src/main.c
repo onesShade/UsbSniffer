@@ -63,7 +63,7 @@ int print_storage_device_info() {
     snprintf(selection_lw.block_name, PATH_MAX, "/%s", path_temp);
     dl_add_entry(atr_dl,DLEP_NONE,  "Block path is :");
     dl_add_entry(atr_dl,DLEP_NONE,  "%s", path_block);
-    strncpy(selection_lw.block_path, path_block, PATH_MAX);
+    s_strcpy(selection_lw.block_path, path_block, PATH_MAX);
     
     snprintf(path_temp, sizeof(path_temp), "%s/size", path_block);
     read_usb_attribute(path_temp, buffer, sizeof(buffer));
@@ -97,7 +97,7 @@ void get_mount_points() {
             buffer[strcspn(buffer, "\n")] = 0;
 
         if (strstr(buffer, selection_lw.block_name) != NULL) {
-            strncpy(mount_buffers[mount_count], buffer, PATH_MAX);
+            s_strcpy(mount_buffers[mount_count], buffer, PATH_MAX);
             mount_count++;
         }
     }
@@ -122,7 +122,7 @@ void get_mount_points() {
         dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. FS: %s\t\tSIZE: %ld MB", mp + 1, file_system, size * 512 / 1024 / 1024);
         dl_add_entry(mount_point_dl, DLEP_NONE,"%s", path_mount);
 
-        strcpy(selection_lw.mount_path, path_mount);
+        s_strcpy(selection_lw.mount_path, path_mount, PATH_MAX);
     }
 
     if (!mount_count) {
@@ -222,7 +222,7 @@ void update_keys(int key) {
     }
 
     if(dl_get_selected(devices_dl)) {
-        strncpy(selection_lw.device_name, dl_get_selected(devices_dl), MAX_DL_STR);
+        s_strcpy(selection_lw.device_name, dl_get_selected(devices_dl), MAX_DL_STR);
     }
 }
 

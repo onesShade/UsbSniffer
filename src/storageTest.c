@@ -1,6 +1,7 @@
-
 #define _POSIX_C_SOURCE 199309L 
 #define _GNU_SOURCE
+
+#include "util.h"
 #include <linux/limits.h>
 #include "vector.h"
 
@@ -201,7 +202,7 @@ void use_octal_escapes(char* str) {
         }
     }
     buffer[dp] = 0;
-    strncpy(str, buffer, PATH_MAX);
+    s_strcpy(str, buffer, PATH_MAX);
 }
 
 void update_st_test_settings(int key) {

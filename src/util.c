@@ -98,3 +98,14 @@ void init_ncurses() {
     nodelay(stdscr, TRUE); 
     curs_set(0);
 }
+
+void s_strcpy(char *dest, const char *src, size_t size) {
+    if(!dest || !src) {
+        log_message("strcpy NULL path");
+        return;
+    }
+    if(!snprintf(dest, size, "%s", src)) {
+        log_message("strcpy error");
+        return;
+    }
+}

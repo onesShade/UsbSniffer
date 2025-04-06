@@ -60,7 +60,6 @@ int str_compare_second_substr_fun(const void *a, const void *b) {
     if(sscanf(a, "%s%s", tmp, f) != 2) return 0; 
     if(sscanf(b, "%s%s", tmp, s) != 2) return 0;
 
-    log_message("cmp of %s vs %s", f, s);
     return strcmp(f, s);
 }
 

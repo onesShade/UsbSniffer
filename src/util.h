@@ -11,5 +11,6 @@ void log_message(const char *format, ...);
 void msleep(int milliseconds);
 int is_usb_device(const char *name);
 int is_storage_device(const char *devpath);
+void s_strcpy(char *dest, const char *src, size_t size);
 
 #endif

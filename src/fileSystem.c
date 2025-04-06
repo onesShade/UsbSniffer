@@ -84,7 +84,7 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
     struct dirent *ent;
     while ((ent = readdir(dir)) != NULL) {
         if (arg.filter_fun(ent->d_name, arg.filter_arg)) {
-            strncpy(result_path, ent->d_name, PATH_MAX);
+            s_strcpy(result_path, ent->d_name, PATH_MAX);
             found = 1;
             break;
         }
@@ -98,7 +98,7 @@ int traverse_path(const char *base_path, FindEntryArg* arg_array, char *final_pa
         
     char current_path[PATH_MAX];
     char temp_path[PATH_MAX];
-    strncpy(current_path, base_path, PATH_MAX);
+    s_strcpy(current_path, base_path, PATH_MAX);
 
     for (int i = 0; arg_array[i].filter_fun; i++) {
 #ifdef DEBUG
@@ -111,10 +111,10 @@ int traverse_path(const char *base_path, FindEntryArg* arg_array, char *final_pa
         }
 
         snprintf(temp_path, PATH_MAX, "%s/%s", current_path, next_entry);
-        strncpy(current_path, temp_path, PATH_MAX);
+        s_strcpy(current_path, temp_path, PATH_MAX);
     }
 
-    strncpy(final_path, current_path, PATH_MAX);
+    s_strcpy(final_path, current_path, PATH_MAX);
     return 1;
 }
 
@@ -124,9 +124,9 @@ void extract_top_dir(const char *path, char *output) {
     const char *last_slash = strrchr(path, '/');
     
     if (!last_slash) {
-        strncpy(output, path, PATH_MAX);
+        s_strcpy(output, path, PATH_MAX);
     } else {
-        strncpy(output, last_slash + 1, PATH_MAX);
+        s_strcpy(output, last_slash + 1, PATH_MAX);
     }
     return;
 }
