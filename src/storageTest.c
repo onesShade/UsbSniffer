@@ -1,5 +1,7 @@
-#include <linux/limits.h>
+
 #define _POSIX_C_SOURCE 199309L 
+#define _GNU_SOURCE
+#include <linux/limits.h>
 #include "vector.h"
 
 #include "dispayList.h"
@@ -18,6 +20,12 @@
 #include <errno.h>
 #include <ncurses.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+
 
 #include "defines.h"
 #include "globals.h"
@@ -50,45 +58,59 @@ void print_loading_bar(int done, int all) {
 }
 
 
-void test_write(const char* path, char* data) {
-    FILE* file = fopen(path, "wb");
-    if (!file) {
-        fprintf(stderr, "File open exception: %s\n", strerror(errno));
+void test_write(const char* path, const char* data, size_t total_size) {
+    // Allocate aligned buffer for O_DIRECT
+    void* aligned_buf;
+    if (posix_memalign(&aligned_buf, 4096, total_size)) {
+        fprintf(stderr, "Memory alignment failed\n");
+        return;
+    }
+    memcpy(aligned_buf, data, total_size);
+
+    // Open with O_DIRECT + O_SYNC
+    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    if (fd == -1) {
+        fprintf(stderr, "Open error: %s\n", strerror(errno));
+        free(aligned_buf);
         return;
     }
 
-    size_t total_size = (size_t)testProps.data_size * 1024 * 1024;
-
-    size_t written = fwrite(data, 1, total_size, file);
-    if (written != total_size) {
-        fprintf(stderr, "Write exception: %s\n", strerror(errno));
-        fclose(file);
-        return;
+    // Raw write
+    ssize_t written = write(fd, aligned_buf, total_size);
+    if (written == -1) {
+        fprintf(stderr, "Write error: %s\n", strerror(errno));
     }
 
-    fflush(file);
-    fclose(file);
+    free(aligned_buf);
+    close(fd);
 }
 
-void test_read(const char* path, char* out) {
-    FILE* file = fopen(path, "rb");
-    if (!file) {
-        fprintf(stderr, "File open exception: %s\n", strerror(errno));
+void test_read(const char* path, char* out, size_t total_size) {
+    // Allocate aligned buffer
+    void* aligned_buf;
+    if (posix_memalign(&aligned_buf, 4096, total_size)) {
+        fprintf(stderr, "Memory alignment failed\n");
         return;
     }
 
-    size_t total_size = (size_t)testProps.data_size * 1024 * 1024;
-
-    size_t bytes_read = fread(out, 1, total_size, file);
-    if (bytes_read != total_size) {
-        if (feof(file)) {
-            fprintf(stderr, "Unexpected end of file\n");
-        } else if (ferror(file)) {
-            fprintf(stderr, "Read exception: %s\n", strerror(errno));
-        }
+    // Open with O_DIRECT
+    int fd = open(path, O_RDONLY | O_DIRECT);
+    if (fd == -1) {
+        fprintf(stderr, "Open error: %s\n", strerror(errno));
+        free(aligned_buf);
+        return;
     }
 
-    fclose(file);
+    // Raw read
+    ssize_t bytes_read = read(fd, aligned_buf, total_size);
+    if (bytes_read == -1) {
+        fprintf(stderr, "Read error: %s\n", strerror(errno));
+    } else {
+        memcpy(out, aligned_buf, bytes_read);
+    }
+
+    free(aligned_buf);
+    close(fd);
 }
 
 void run_w_r_test(const char *mount_point) {
@@ -112,8 +134,8 @@ void run_w_r_test(const char *mount_point) {
 
     clock_gettime(CLOCK_REALTIME, &start);
     for(int i = 0; i < testProps.number_of_passes; i++) {
+        test_write(file_path, buffer, total_size);
         printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
-        test_write(file_path, buffer);
     }
     clock_gettime(CLOCK_REALTIME, &end);
 
@@ -123,7 +145,7 @@ void run_w_r_test(const char *mount_point) {
 
     printf("Reading and verification...\r\n");
     clock_gettime(CLOCK_REALTIME, &start);
-    test_read(file_path, out_data);
+    test_read(file_path, out_data, total_size);
     clock_gettime(CLOCK_REALTIME, &end);
 
     elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
@@ -150,7 +172,7 @@ void run_w_r_test(const char *mount_point) {
     printf("Press [ENTER] to exit...\r\n");
     while (getchar() != '\r');
 
-    if (remove(file_path)) {
+    if (unlink(file_path)) {
         fprintf(stderr, "Failed to delete test file: %s\r\n", strerror(errno));
     }
 }

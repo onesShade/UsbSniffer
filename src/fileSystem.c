@@ -89,7 +89,7 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
             break;
         }
     }
-
+    
     closedir(dir);
     return found;
 }
@@ -101,9 +101,9 @@ int traverse_path(const char *base_path, FindEntryArg* arg_array, char *final_pa
     strncpy(current_path, base_path, PATH_MAX);
 
     for (int i = 0; arg_array[i].filter_fun; i++) {
-        #ifdef DEBUG
+#ifdef DEBUG
         log_message("%s", current_path);
-        #endif
+#endif
 
         char next_entry[PATH_MAX];
         if (!find_first_matching_entry(current_path, arg_array[i], next_entry)) {
@@ -124,10 +124,8 @@ void extract_top_dir(const char *path, char *output) {
     const char *last_slash = strrchr(path, '/');
     
     if (!last_slash) {
-        // No slashes found, assume the entire path is the top dir
         strncpy(output, path, PATH_MAX);
     } else {
-        // Copy everything after the last '/'
         strncpy(output, last_slash + 1, PATH_MAX);
     }
     return;
