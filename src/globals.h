@@ -16,7 +16,6 @@ typedef struct {
     char device_name[PATH_MAX];
     char block_name[PATH_MAX];
     char block_path[PATH_MAX];
-    char mount_path[PATH_MAX];
 } Selection;
 
 extern Selection selection_lw;

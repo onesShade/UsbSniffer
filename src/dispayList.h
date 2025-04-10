@@ -45,7 +45,7 @@ DispayList* dl_init(char selectable, char horizontal_shift, int x, int y);
 
 void dl_free(DispayList* dl);
 
-void dl_iterate(DispayList* dl, int move);
+int dl_iterate(DispayList* dl, int move);
 
 void dl_draw(DispayList* dl, WINDOW* win, DLRProperties dlrp);
 
@@ -58,5 +58,7 @@ char* dl_get_selected(DispayList* dl);
 void dl_set_pos(DispayList* dl, int x, int y);
 
 void dl_sort_natural(DispayList* dl);
+
+void dl_reset_sel_pos(DispayList* dl);
 
 #endif

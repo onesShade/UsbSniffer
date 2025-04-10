@@ -1,4 +1,5 @@
-#define _POSIX_C_SOURCE 199309L
+#define _POSIX_C_SOURCE 199309L 
+#define _GNU_SOURCE
 
 #include <stdarg.h>
 #include <time.h>
@@ -12,6 +13,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <ncurses.h>
+#include <string.h>
 
 #include "util.h"
 #include "defines.h"
@@ -108,4 +110,15 @@ void s_strcpy(char *dest, const char *src, size_t size) {
         log_message("strcpy error");
         return;
     }
+}
+
+int mvwprintw_centered(WINDOW* win, int y, const char* format, ...) {
+    char buff[MAX_READ];
+    va_list args;
+    va_start(args, format);
+    snprintf(buff, MAX_READ, format, args);
+    va_end(args);
+    int x = getmaxx(win) / 2 - strnlen(buff, MAX_READ) / 2;
+    int res = mvwprintw(win, y, x, "%s", buff);
+    return res;
 }

@@ -1,3 +1,7 @@
+#define _POSIX_C_SOURCE 199309L 
+#define _GNU_SOURCE
+
+#include <linux/limits.h>
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
@@ -5,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include <string.h>
+#include <string.h> 
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -63,7 +67,7 @@ int filter_has_simbol(const char *name, const void *arg) {
 
 int filter_prefix(const char *name, const void *arg) {
     const char *prefix = (const char *)arg;
-    return strncmp(name, prefix, strlen(prefix)) == 0;
+    return strncmp(name, prefix, strnlen(prefix, MAX_READ)) == 0;
 }
 
 int filter_regular_entries(const char *name, const void *unused) {
@@ -109,7 +113,10 @@ int traverse_path(const char *base_path, FindEntryArg* arg_array, char *final_pa
         if (!find_first_matching_entry(current_path, arg_array[i], next_entry)) {
             return 0;
         }
-
+        if (strnlen(current_path, PATH_MAX) + strnlen(next_entry, PATH_MAX) + 1 >= PATH_MAX) {
+            log_message("traverse_path error: path too big");
+            return 0;
+        }
         snprintf(temp_path, PATH_MAX, "%s/%s", current_path, next_entry);
         s_strcpy(current_path, temp_path, PATH_MAX);
     }

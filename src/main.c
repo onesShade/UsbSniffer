@@ -58,7 +58,7 @@ int print_storage_device_info() {
     if (!traverse_path(path_temp, traverce_arg, path_block)) {
         return 0;
     }
-
+    
     extract_top_dir(path_block, path_temp);
     snprintf(selection_lw.block_name, PATH_MAX, "/%s", path_temp);
     dl_add_entry(atr_dl,DLEP_NONE,  "Block path is :");
@@ -68,8 +68,8 @@ int print_storage_device_info() {
     snprintf(path_temp, sizeof(path_temp), "%s/size", path_block);
     read_usb_attribute(path_temp, buffer, sizeof(buffer));
     unsigned long int size = 0;
-    sscanf(buffer, "%ld", &size);
-    dl_add_entry(atr_dl,DLEP_NONE, "Size: %ld MB\n", size * 512 / 1024 / 1024);
+    sscanf(buffer, "%lu", &size);
+    dl_add_entry(atr_dl,DLEP_NONE, "Size: %lu MB\n", size * 512 / 1024 / 1024);
 
     snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
     print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL},  atr_dl);
@@ -90,15 +90,15 @@ void get_mount_points() {
     }
 
     dl_add_entry(mount_point_dl, DLEP_CENTERED | DLEP_UNSELECTABLE, "---MOUNT POINTS---");
+    dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "");
 
     size_t mount_count = 0;
     while (fgets(buffer, sizeof(buffer), mounts) && mount_count < MAX_MOUNT_POINTS) {
-        if (strcspn(buffer, "\n") < strnlen(buffer, MAX_READ))
-            buffer[strcspn(buffer, "\n")] = 0;
+        if (strcspn(buffer, "\n") < strnlen(buffer, MAX_READ) &&
+            strstr(buffer, selection_lw.block_name) != NULL) {
 
-        if (strstr(buffer, selection_lw.block_name) != NULL) {
-            s_strcpy(mount_buffers[mount_count], buffer, PATH_MAX);
-            mount_count++;
+                s_strcpy(mount_buffers[mount_count], buffer, PATH_MAX);
+                mount_count++;
         }
     }
     if(mount_count)
@@ -117,16 +117,14 @@ void get_mount_points() {
         snprintf(buffer_extra, sizeof(buffer_extra), "%s/%s/size", selection_lw.block_path, buffer);
         read_usb_attribute(buffer_extra, buffer, sizeof(buffer));
         unsigned long int size = 0;
-        sscanf(buffer, "%ld", &size);
+        sscanf(buffer, "%lu", &size);
         
         dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "%d. FS: %s\t\tSIZE: %ld MB", mp + 1, file_system, size * 512 / 1024 / 1024);
         dl_add_entry(mount_point_dl, DLEP_NONE,"%s", path_mount);
-
-        s_strcpy(selection_lw.mount_path, path_mount, PATH_MAX);
     }
 
     if (!mount_count) {
-        dl_add_entry(mount_point_dl, DLEP_NONE, "[none]");
+        dl_add_entry(mount_point_dl, DLEP_UNSELECTABLE, "[none]");
     }
     fclose(mounts);
 }
@@ -163,6 +161,7 @@ void draw_bottom_window() {
         mvwprintw(bottom_win, 0, x += 16, "B - FILE SIZE");
         mvwprintw(bottom_win, 0, x += 16, "N - PASSES");
     }
+    mvwprintw(bottom_win, 0, x += 16, "Q - BACK");
     mvwprintw(bottom_win, 0, x += 16, "F10 - EXIT");
     wrefresh(bottom_win);
 }
@@ -173,13 +172,15 @@ void draw_popup_window() {
         dl_set_pos(mount_point_dl, 4, 1);
         dl_draw(mount_point_dl, popup_win, DLRP_NONE);
     }
-    dl_set_pos(test_size_sel_dl, test_size_sel_dl->x, mount_point_dl->y + mount_point_dl->entryes->size + 1);
+
+    mvwprintw_centered(popup_win, mount_point_dl->y + mount_point_dl->entryes->size + 1, "---TEST SETTINGS---");
+    dl_set_pos(test_size_sel_dl, test_size_sel_dl->x, mount_point_dl->y + mount_point_dl->entryes->size + 3);
     dl_draw(test_size_sel_dl, popup_win, DLRP_NONE);
 
     dl_set_pos(test_passes_dl, test_passes_dl->x, test_size_sel_dl->y + 2);
     dl_draw(test_passes_dl, popup_win, DLRP_NONE);
 
-    mvwprintw(popup_win, test_passes_dl->y + 4, 1, "%s", testPropsStr);
+    mvwprintw(popup_win, test_passes_dl->y + 4, test_passes_dl->x, "%s", testPropsStr);
 
     box(popup_win, 0, 0);
     wrefresh(popup_win);
@@ -255,7 +256,7 @@ void update_device_dl() {
     }
 
     dl_sort_natural(devices_dl);
-    //dl_draw(devices_dl, left_win, DLRP_NONE);
+
 }
 
 void update_atr_dl() {
@@ -270,6 +271,7 @@ void update_atr_dl() {
         {"bDeviceProtocol", "Device Protocol", NULL},
         {"manufacturer", "Manufacturer", NULL},
         {"product", "Product", NULL},
+        {"serial", "Serial", NULL},
         {"serial", "Serial", NULL},
         {"version", "USB Version", NULL},
         {"speed", "Speed", "Mbps"},
@@ -303,7 +305,6 @@ int main() {
     init_globals();
 
     selection_lw.window = device_list;
-    selection_lw.mount_path[0] = 0;
     while (is_open) {
         int key = getch();
         update_keys(key);

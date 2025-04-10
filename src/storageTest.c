@@ -3,7 +3,6 @@
 
 #include "util.h"
 #include <linux/limits.h>
-#include "vector.h"
 
 #include "dispayList.h"
 #include "storageTest.h"
@@ -22,9 +21,7 @@
 #include <ncurses.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 
 
@@ -35,12 +32,14 @@ TestProps testProps;
 char testPropsStr[MAX_READ];
 
 void set_test_props() {
-    sscanf(vector_at(test_size_sel_dl->entryes, test_size_sel_dl->selected), 
-            "%d", &testProps.data_size);
-    sscanf(vector_at(test_passes_dl->entryes, test_passes_dl->selected), 
-            "%d", &testProps.number_of_passes);
+    if (!dl_get_selected(mount_point_dl)) {
+        snprintf(testPropsStr, MAX_READ, "No mount point selected.");
+        return;
+    }
 
-
+    sscanf(dl_get_selected(test_size_sel_dl), "%d", &testProps.data_size);
+    sscanf(dl_get_selected(test_passes_dl), "%d", &testProps.number_of_passes);
+    
     snprintf(testPropsStr, MAX_READ, "Press [ENTER] to test on %d MB file %d times", testProps.data_size, testProps.number_of_passes);
 }
 
@@ -115,6 +114,10 @@ void test_read(const char* path, char* out, size_t total_size) {
 }
 
 void run_w_r_test(const char *mount_point) {
+    if (!mount_point) {
+        return;
+    }
+
     char file_path[PATH_MAX];
 
     snprintf(file_path, sizeof(file_path), "%s/%s", mount_point, TEST_FILE_NAME);
@@ -184,7 +187,7 @@ void use_octal_escapes(char* str) {
 
     int sp = 0;
     int dp = 0;
-    int og_len = strlen(str);
+    int og_len = strnlen(str, PATH_MAX);
 
     for(; sp < og_len; sp++, dp++) {
         if (str[sp] == '\\' 
@@ -206,6 +209,7 @@ void use_octal_escapes(char* str) {
 }
 
 void update_st_test_settings(int key) {
+    dl_reset_sel_pos(mount_point_dl);
     if (key == 'q') {
         selection_lw.window = device_list;
     }
@@ -219,7 +223,7 @@ void update_st_test_settings(int key) {
         dl_iterate(test_passes_dl, +1);
     }
     if (key == '\n') {
-        run_w_r_test(vector_at(mount_point_dl->entryes, mount_point_dl->selected));
+        run_w_r_test(dl_get_selected(mount_point_dl));
         selection_lw.window = device_list;
     }
     set_test_props();

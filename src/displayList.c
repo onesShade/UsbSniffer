@@ -1,3 +1,7 @@
+#include <stddef.h>
+#define _POSIX_C_SOURCE 199309L 
+#define _GNU_SOURCE
+
 #include "dispayList.h"
 #include "util.h"
 #include "vector.h"
@@ -7,6 +11,7 @@
 #include "defines.h"
 #include <string.h>
 #include <ctype.h>
+
 
 
 DispayList* dl_init(char selectable, char horizontal_shift, int x, int y) {
@@ -20,21 +25,28 @@ DispayList* dl_init(char selectable, char horizontal_shift, int x, int y) {
     return dl;
 }
 
-void dl_iterate(DispayList* dl, int move) {
+int dl_iterate(DispayList* dl, int move) {
+    if(!dl->entryes->size) {
+        return 0;
+    }
     if((move != 1 && move != -1) || !dl->selectable) {
         log_message("dl_iterate exception");
-        return;
+        return 0;
     }
-    int i = 0;
+    size_t start_pos = dl->selected;
     do {
-    if(i++ >= 100) {
+        dl->selected += move;
+        dl->selected += dl->entryes->size;
+        dl->selected = dl->selected % dl->entryes->size;
+    if(dl->selected == start_pos) {
+#ifdef DEBUG
         log_message("infinite loop at dl_iterate");
-        return;
+#endif
+        return 0;
     }
-    dl->selected += move;
-    dl->selected += dl->entryes->size;
-    dl->selected = dl->selected % dl->entryes->size;
+
     } while(((DLE*)vector_at(dl->entryes, dl->selected))->prop.unselectable);
+    return 1;
 }
 
 void dl_clear(DispayList* dl) {
@@ -70,7 +82,7 @@ void dl_draw(DispayList* dl, WINDOW* win, DLRProperties dlrp) {
             DLE* dle = (DLE*)vector_at(dl->entryes, line);
     
             if(dle->prop.centered) {
-                x = getmaxx(win) / 2 - strlen((const char*)vector_at(dl->entryes, line)) / 2;
+                x = getmaxx(win) / 2 - strnlen((const char*)vector_at(dl->entryes, line), MAX_READ) / 2;
             }
     
             if (dl->selectable && line == dl->selected && !dlr.hide_selection) {
@@ -110,7 +122,11 @@ char* dl_get_selected(DispayList* dl) {
         log_message("DL not selectable");
         return NULL;
     }
-    return vector_at(dl->entryes, dl->selected);
+    if(!dl->entryes->size) {
+        return NULL;
+    }
+    DLE* dle = (DLE*)vector_at(dl->entryes, dl->selected);
+    return dle->body;
 }
 
 void dl_free(DispayList* dl) {
@@ -155,4 +171,22 @@ int natural_compare_dle(const void *a, const void *b) {
 
 void dl_sort_natural(DispayList* dl) {
     vector_sort(dl->entryes, natural_compare_dle);
+}
+
+void dl_reset_sel_pos(DispayList* dl) {
+    if (!dl->selectable)
+        dl->selectable = TRUE;
+
+    if(!dl->entryes->size) {
+        return;
+    }
+
+    DLE* dle = (DLE*)vector_at(dl->entryes, dl->selected);
+    if (!dle->prop.unselectable) {
+        return;
+    }
+
+    if(!dl_iterate(dl, +1)) {
+        dl->selectable = false;
+    }
 }
