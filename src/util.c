@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #define _POSIX_C_SOURCE 199309L 
 #define _GNU_SOURCE
 
@@ -76,7 +77,7 @@ int is_storage_device(const char *devpath) {
     
     if ((dir = opendir(path)) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
-            if (strncmp(ent->d_name, devpath, strlen(devpath)) == 0 && 
+            if (strncmp(ent->d_name, devpath, strnlen(devpath, PATH_MAX)) == 0 && 
                 strchr(ent->d_name, ':') != NULL) {
                 
                 snprintf(iface_path, sizeof(iface_path), "%s/%s/bInterfaceClass", path, ent->d_name);

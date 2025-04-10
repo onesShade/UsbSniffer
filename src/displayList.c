@@ -14,7 +14,7 @@
 
 
 
-DispayList* dl_init(char selectable, char horizontal_shift, int x, int y) {
+DispayList* dl_init(const char selectable, const char horizontal_shift, const int x, const int y) {
     DispayList* dl = malloc(sizeof(DispayList));
     dl->selectable = selectable;
     dl->selected = 0;
@@ -45,7 +45,7 @@ int dl_iterate(DispayList* dl, int move) {
         return 0;
     }
 
-    } while(((DLE*)vector_at(dl->entryes, dl->selected))->prop.unselectable);
+    } while(((const DLE*)vector_at(dl->entryes, dl->selected))->prop.unselectable);
     return 1;
 }
 
@@ -68,18 +68,16 @@ void dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
     vector_push_back(dl->entryes, buff);
 }
 
-void dl_draw(DispayList* dl, WINDOW* win, DLRProperties dlrp) {
-    while (dl->selectable && dl->selected >= dl->entryes->size && dl->entryes->size) 
-        dl->selected--;
+void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp) {
 
-    DLR dlr = *((DLR*)&dlrp);
+    const DLR dlr = *((const DLR*)&dlrp);
     if (!dl->horizontal_shift) {
         for(size_t line = 0; line < dl->entryes->size; line++) {
 
             int x = dl->x;
             int y = dl->y + line;
     
-            DLE* dle = (DLE*)vector_at(dl->entryes, line);
+            const DLE* dle = (const DLE*)vector_at(dl->entryes, line);
     
             if(dle->prop.centered) {
                 x = getmaxx(win) / 2 - strnlen((const char*)vector_at(dl->entryes, line), MAX_READ) / 2;
@@ -99,10 +97,10 @@ void dl_draw(DispayList* dl, WINDOW* win, DLRProperties dlrp) {
             int x = dl->x + col * dl->horizontal_shift;
             int y = dl->y;
     
-            DLE* dle = (DLE*)vector_at(dl->entryes, col);
+            const DLE* dle = (const DLE*)vector_at(dl->entryes, col);
     
             if(dle->prop.centered) {
-                x = getmaxx(win) / 2 - strlen((const char*)vector_at(dl->entryes, col)) / 2;
+                x = getmaxx(win) / 2 - strnlen((const char*)vector_at(dl->entryes, col), MAX_READ) / 2;
             }
     
             if (dl->selectable && col == dl->selected && !dlr.hide_selection) {
@@ -179,6 +177,10 @@ void dl_reset_sel_pos(DispayList* dl) {
 
     if(!dl->entryes->size) {
         return;
+    }
+
+    if(dl->selected >= dl->entryes->size) {
+        dl->selected = dl->entryes->size - 1;
     }
 
     DLE* dle = (DLE*)vector_at(dl->entryes, dl->selected);

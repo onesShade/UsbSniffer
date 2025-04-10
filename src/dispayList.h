@@ -41,13 +41,13 @@ typedef enum {
     DLRP_HIDE_SELECTION = 1,
 }DLRProperties;
 
-DispayList* dl_init(char selectable, char horizontal_shift, int x, int y);
+DispayList* dl_init(const char selectable, const char horizontal_shift, const int x, const int y);
 
 void dl_free(DispayList* dl);
 
 int dl_iterate(DispayList* dl, int move);
 
-void dl_draw(DispayList* dl, WINDOW* win, DLRProperties dlrp);
+void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp);
 
 void dl_clear(DispayList* dl);
 

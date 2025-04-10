@@ -70,7 +70,7 @@ int filter_prefix(const char *name, const void *arg) {
     return strncmp(name, prefix, strnlen(prefix, MAX_READ)) == 0;
 }
 
-int filter_regular_entries(const char *name, const void *unused) {
+int filter_regular_entries(const char *name, const void* unused) {
     return name[0] != '.';
 }
 
@@ -85,7 +85,7 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
     log_message("Travecrcing to path %s", path);
 #endif
     int found = 0;
-    struct dirent *ent;
+    const struct dirent * ent;
     while ((ent = readdir(dir)) != NULL) {
         if (arg.filter_fun(ent->d_name, arg.filter_arg)) {
             s_strcpy(result_path, ent->d_name, PATH_MAX);
@@ -98,7 +98,7 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
     return found;
 }
 
-int traverse_path(const char *base_path, FindEntryArg* arg_array, char *final_path) {
+int traverse_path(const char *base_path, const FindEntryArg * const arg_array, char *final_path) {
         
     char current_path[PATH_MAX];
     char temp_path[PATH_MAX];

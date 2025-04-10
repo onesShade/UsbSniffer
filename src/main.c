@@ -143,7 +143,6 @@ void draw_right_window() {
 void draw_left_window() {
     werase(left_win);
     box(left_win, 0, 0);
-    //update_device_dl();
     dl_draw(devices_dl, left_win, DLRP_NONE);
     wrefresh(left_win);
 }
@@ -256,7 +255,7 @@ void update_device_dl() {
     }
 
     dl_sort_natural(devices_dl);
-
+    dl_reset_sel_pos(devices_dl);
 }
 
 void update_atr_dl() {

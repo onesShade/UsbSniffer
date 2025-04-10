@@ -58,24 +58,21 @@ void print_loading_bar(int done, int all) {
 }
 
 
-void test_write(const char* path, const char* data, size_t total_size) {
-    // Allocate aligned buffer for O_DIRECT
+int test_write(const char* path, const char* data, size_t total_size) {
     void* aligned_buf;
     if (posix_memalign(&aligned_buf, 4096, total_size)) {
         fprintf(stderr, "Memory alignment failed\n");
-        return;
+        return 0;
     }
     memcpy(aligned_buf, data, total_size);
 
-    // Open with O_DIRECT + O_SYNC
-    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_DIRECT | O_SYNC);
     if (fd == -1) {
         fprintf(stderr, "Open error: %s\n", strerror(errno));
         free(aligned_buf);
-        return;
+        return 0;
     }
 
-    // Raw write
     ssize_t written = write(fd, aligned_buf, total_size);
     if (written == -1) {
         fprintf(stderr, "Write error: %s\n", strerror(errno));
@@ -83,25 +80,23 @@ void test_write(const char* path, const char* data, size_t total_size) {
 
     free(aligned_buf);
     close(fd);
+    return 1;
 }
 
-void test_read(const char* path, char* out, size_t total_size) {
-    // Allocate aligned buffer
+int test_read(const char* path, char* out, size_t total_size) {
     void* aligned_buf;
     if (posix_memalign(&aligned_buf, 4096, total_size)) {
         fprintf(stderr, "Memory alignment failed\n");
-        return;
+        return 0;
     }
 
-    // Open with O_DIRECT
     int fd = open(path, O_RDONLY | O_DIRECT);
     if (fd == -1) {
         fprintf(stderr, "Open error: %s\n", strerror(errno));
         free(aligned_buf);
-        return;
+        return 0;
     }
 
-    // Raw read
     ssize_t bytes_read = read(fd, aligned_buf, total_size);
     if (bytes_read == -1) {
         fprintf(stderr, "Read error: %s\n", strerror(errno));
@@ -111,6 +106,7 @@ void test_read(const char* path, char* out, size_t total_size) {
 
     free(aligned_buf);
     close(fd);
+    return 1;
 }
 
 void run_w_r_test(const char *mount_point) {
@@ -138,7 +134,8 @@ void run_w_r_test(const char *mount_point) {
 
     clock_gettime(CLOCK_REALTIME, &start);
     for(int i = 0; i < testProps.number_of_passes; i++) {
-        test_write(file_path, buffer, total_size);
+        if (!test_write(file_path, buffer, total_size))
+            return;
         printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
     }
     clock_gettime(CLOCK_REALTIME, &end);
@@ -149,7 +146,10 @@ void run_w_r_test(const char *mount_point) {
 
     printf("Reading and verification...\r\n");
     clock_gettime(CLOCK_REALTIME, &start);
-    test_read(file_path, out_data, total_size);
+
+    if(!test_read(file_path, out_data, total_size))
+        return;
+        
     clock_gettime(CLOCK_REALTIME, &end);
 
     elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
