@@ -109,8 +109,58 @@ int test_read(const char* path, char* out, size_t total_size) {
     return 1;
 }
 
-void run_ws_test(const char *mount_point) {
-    if (!mount_point) {
+typedef enum {
+    WRITE_SPEED,
+    READ_SPEED,
+} TestMode;
+
+
+void run_ws_test(char* file_path, char* buffer, size_t total_size) {
+    double elapsed_sec;
+    struct timespec start, end;
+
+    clock_gettime(CLOCK_REALTIME, &start);
+    for(int i = 0; i < testProps.number_of_passes; i++) {
+        if (!test_write(file_path, buffer, total_size)) {
+            while (getchar() != '\r');
+            return;
+        }
+        printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
+    }
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
+    printf("Write time: %.3f sec\r\n", elapsed_sec);
+    printf("Write speed: %.3f MB/s\r\n", (double)testProps.data_size * testProps.number_of_passes / elapsed_sec);    
+}
+
+
+void run_rs_test(char* file_path, char* buffer, size_t total_size, char* out_data) {
+    struct timespec start, end;
+    double elapsed_sec;
+
+    if (!test_write(file_path, buffer, total_size)) 
+        return;
+
+    clock_gettime(CLOCK_REALTIME, &start);
+    for(int i = 0; i < testProps.number_of_passes; i++) {
+        if(!test_read(file_path, out_data, total_size)) {
+            while (getchar() != '\r');
+            return;
+        }
+        printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
+    }
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
+    printf("Read time: %.3f sec\r\n", elapsed_sec);
+    printf("Read speed: %.3f MB/s\r\n", (double)testProps.data_size / elapsed_sec);
+}
+
+
+void run_general_test(TestMode tm) {
+    const char *mount_point = dl_get_selected(mount_point_dl);
+    if(!mount_point) {
         return;
     }
 
@@ -118,7 +168,7 @@ void run_ws_test(const char *mount_point) {
 
     snprintf(file_path, sizeof(file_path), "%s/%s", mount_point, TEST_FILE_NAME);
     struct timespec start, end;
-    double elapsed_sec;
+
 
     long seed = time(NULL);
     printf("Creating temp test file of %d MB %d times at %s\r\n", testProps.data_size, testProps.number_of_passes, file_path);
@@ -132,19 +182,18 @@ void run_ws_test(const char *mount_point) {
         buffer[i] = rand() % 256;
     }
 
-    clock_gettime(CLOCK_REALTIME, &start);
-    for(int i = 0; i < testProps.number_of_passes; i++) {
-        if (!test_write(file_path, buffer, total_size))
-            return;
-        printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
+    switch (tm) {
+        case WRITE_SPEED:
+            run_ws_test(file_path, buffer, total_size);
+            break;
+        case READ_SPEED:
+            run_rs_test(file_path, buffer, total_size, out_data);
+            break;
+        default:
+            break;
     }
-    clock_gettime(CLOCK_REALTIME, &end);
-
-    elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
-    printf("Write time: %.3f sec\r\n", elapsed_sec);
-    printf("Write speed: %.3f MB/s\r\n", (double)testProps.data_size * testProps.number_of_passes / elapsed_sec);
-
-    printf("Reading and verification...\r\n");
+    
+    printf("File verification...\r\n");
 
     if(!test_read(file_path, out_data, total_size))
         return;
@@ -156,7 +205,7 @@ void run_ws_test(const char *mount_point) {
         }
     }
 
-    free(buffer);
+    free(buffer);   
     free(out_data);
 
     if (errors > 0) {
@@ -171,71 +220,8 @@ void run_ws_test(const char *mount_point) {
     if (unlink(file_path)) {
         fprintf(stderr, "Failed to delete test file: %s\r\n", strerror(errno));
     }
+
 }
-
-void run_rs_test(const char *mount_point) {
-    if (!mount_point) {
-        return;
-    }
-
-    char file_path[PATH_MAX];
-
-    snprintf(file_path, sizeof(file_path), "%s/%s", mount_point, TEST_FILE_NAME);
-    struct timespec start, end;
-    double elapsed_sec;
-
-    long seed = time(NULL);
-    printf("Creating temp test file of %d MB %d times at %s\r\n", testProps.data_size, testProps.number_of_passes, file_path);
-
-    size_t total_size = (size_t)testProps.data_size * 1024 * 1024;
-    char* buffer = malloc(total_size);
-    char* out_data = malloc(total_size);
-
-    srand(seed);
-    for (size_t i = 0; i < total_size; i++) {
-        buffer[i] = rand() % 256;
-    }
-
-    if (!test_write(file_path, buffer, total_size))
-        return;
-
-    printf("Reading and verification...\r\n");
-    clock_gettime(CLOCK_REALTIME, &start);
-    for(int i = 0; i < testProps.number_of_passes; i++) {
-        if(!test_read(file_path, out_data, total_size))
-            return;
-        printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
-    }
-    clock_gettime(CLOCK_REALTIME, &end);
-
-    elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
-    printf("Read time: %.3f sec\r\n", elapsed_sec);
-    printf("Read speed: %.3f MB/s\r\n", (double)testProps.data_size / elapsed_sec);
-
-    int errors = 0;
-    for (size_t j = 0; j < total_size; j++) {
-        if (buffer[j] != out_data[j]) {
-            errors++;
-        }
-    }
-
-    free(buffer);
-    free(out_data);
-
-    if (errors > 0) {
-        printf("Errors found: %d\r\n", errors);
-    } else {
-        printf("Test passed!\r\n");
-    }
-
-    printf("Press [ENTER] to exit...\r\n");
-    while (getchar() != '\r');
-
-    if (unlink(file_path)) {
-        fprintf(stderr, "Failed to delete test file: %s\r\n", strerror(errno));
-    }
-}
-
 
 void use_octal_escapes(char* str) {
     char buffer[PATH_MAX];
@@ -284,11 +270,11 @@ void update_st_test_settings(int key) {
         log_message("%s", dl_get_selected(test_mode_dl));
 
         if (strncmp("WS", dl_get_selected(test_mode_dl), MAX_READ) == 0) {
-            run_ws_test(dl_get_selected(mount_point_dl));
+            run_general_test(WRITE_SPEED);
         }
         
         if (strncmp("RS", dl_get_selected(test_mode_dl), MAX_READ) == 0) {
-            run_rs_test(dl_get_selected(mount_point_dl));
+            run_general_test(READ_SPEED);
         }
         
         selection_lw.window = device_list;
