@@ -1,7 +1,7 @@
-#include <stddef.h>
 #define _POSIX_C_SOURCE 200809L
-#include "dispayList.h"
 
+#include <stddef.h>
+#include "dispayList.h"
 #include <linux/limits.h>
 #include "fileSystem.h"
 #include <string.h>
@@ -70,9 +70,6 @@ int print_storage_device_info() {
     unsigned long int size = 0;
     sscanf(buffer, "%lu", &size);
     dl_add_entry(atr_dl,DLEP_NONE, "Size: %lu MB\n", size * 512 / 1024 / 1024);
-
-    snprintf(path_temp, sizeof(path_temp), "%s%s/", SYSFS_USB_DEVICES, selection_lw.device_name);
-    print_attribute_value(path_temp, (const Atr_Print_arg){"bMaxPower", "Max Power: ", NULL},  atr_dl);
     return 1;
 }
 
@@ -166,21 +163,34 @@ void draw_bottom_window() {
 }
 
 void draw_popup_window() {
+    if(selection_lw.window == device_list)
+        return;
+
     werase(popup_win);
-    if (is_storage_device(selection_lw.device_name)) {
-        dl_set_pos(mount_point_dl, 4, 1);
-        dl_draw(mount_point_dl, popup_win, DLRP_NONE);
+    switch (selection_lw.window) {
+        case storage_test_settings: {
+            if (is_storage_device(selection_lw.device_name)) {
+                dl_set_pos(mount_point_dl, 4, 1);
+                dl_draw(mount_point_dl, popup_win, DLRP_NONE);
+            }
+        
+            mvwprintw_centered(popup_win, mount_point_dl->y + mount_point_dl->entryes->size + 1, "---TEST SETTINGS---");
+            dl_set_pos(test_size_sel_dl, test_size_sel_dl->x, mount_point_dl->y + mount_point_dl->entryes->size + 3);
+            dl_draw(test_size_sel_dl, popup_win, DLRP_NONE);
+        
+            dl_set_pos(test_passes_dl, test_passes_dl->x, test_size_sel_dl->y + 2);
+            dl_draw(test_passes_dl, popup_win, DLRP_NONE);
+        
+            mvwprintw(popup_win, test_passes_dl->y + 4, test_passes_dl->x, "%s", testPropsStr);
+        }
+            break;
+        case storage_test_run: {
+        }
+            break;
+        default:
+            break;
     }
-
-    mvwprintw_centered(popup_win, mount_point_dl->y + mount_point_dl->entryes->size + 1, "---TEST SETTINGS---");
-    dl_set_pos(test_size_sel_dl, test_size_sel_dl->x, mount_point_dl->y + mount_point_dl->entryes->size + 3);
-    dl_draw(test_size_sel_dl, popup_win, DLRP_NONE);
-
-    dl_set_pos(test_passes_dl, test_passes_dl->x, test_size_sel_dl->y + 2);
-    dl_draw(test_passes_dl, popup_win, DLRP_NONE);
-
-    mvwprintw(popup_win, test_passes_dl->y + 4, test_passes_dl->x, "%s", testPropsStr);
-
+   
     box(popup_win, 0, 0);
     wrefresh(popup_win);
 }
@@ -277,6 +287,7 @@ void update_atr_dl() {
         {"busnum", "Bus Number", NULL},
         {"devnum", "Device Number", NULL},
         {"maxchild", "Max Children", NULL},
+        {"bMaxPower", "Max Power", NULL},
         {NULL, NULL, NULL}
     };
     dl_add_entry(atr_dl, DLEP_CENTERED,"---USB DEVICE ATTRIBUTES---");
@@ -316,8 +327,7 @@ int main() {
         draw_right_window();
         draw_bottom_window();
 
-        if(selection_lw.window != device_list)
-            draw_popup_window();
+        draw_popup_window();
 
         msleep(MAIN_LOOP_SLEEP_TIME_MS);
     }
