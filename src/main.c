@@ -23,20 +23,6 @@
 void update_atr_dl();
 void update_device_dl();
 
-int print_attribute_value(const char* dir,const Atr_Print_arg arg, DispayList *dl) {
-    char buffer[MAX_READ];
-    char path[PATH_MAX];
-    snprintf(path, sizeof(path), "%s%s", dir, arg.attribute_name);
-    read_usb_attribute(path, buffer, sizeof(buffer));
-    if(!buffer[0]) {
-        dl_add_entry(dl, DLEP_NONE,"%s: ---", arg.print_prefix);
-        return 0;
-    }
-    dl_add_entry(dl, DLEP_NONE,"%s: %s %s",
-         arg.print_prefix, buffer, arg.print_postfix ? arg.print_postfix : "");
-    return 1;
-}
-
 int print_storage_device_info() {
     char path_temp[PATH_MAX];
     char path_block[PATH_MAX];
@@ -152,11 +138,14 @@ void draw_bottom_window() {
             mvwprintw(bottom_win, 0, x += 16, "F2 - TEST");
         }
     }
+
     if(selection_lw.window == storage_test_settings) {
         mvwprintw(bottom_win, 0, x += 16, "M - MOUNT P.");
+        mvwprintw(bottom_win, 0, x += 16, "V - TEST MODE");
         mvwprintw(bottom_win, 0, x += 16, "B - FILE SIZE");
         mvwprintw(bottom_win, 0, x += 16, "N - PASSES");
     }
+
     mvwprintw(bottom_win, 0, x += 16, "Q - BACK");
     mvwprintw(bottom_win, 0, x += 16, "F10 - EXIT");
     wrefresh(bottom_win);
@@ -174,13 +163,20 @@ void draw_popup_window() {
                 dl_draw(mount_point_dl, popup_win, DLRP_NONE);
             }
         
-            mvwprintw_centered(popup_win, mount_point_dl->y + mount_point_dl->entryes->size + 1, "---TEST SETTINGS---");
-            dl_set_pos(test_size_sel_dl, test_size_sel_dl->x, mount_point_dl->y + mount_point_dl->entryes->size + 3);
+            int y_p = mount_point_dl->y + mount_point_dl->entryes->size;
+
+            mvwprintw_centered(popup_win, y_p + 1, "---TEST SETTINGS---");
+            
+            dl_set_pos(test_mode_dl, test_mode_dl->x, y_p + 3);
+            dl_draw(test_mode_dl, popup_win, DLRP_NONE);
+        
+            dl_set_pos(test_size_sel_dl, test_passes_dl->x, y_p + 5);
             dl_draw(test_size_sel_dl, popup_win, DLRP_NONE);
         
-            dl_set_pos(test_passes_dl, test_passes_dl->x, test_size_sel_dl->y + 2);
+            dl_set_pos(test_passes_dl, test_passes_dl->x, y_p + 7);
             dl_draw(test_passes_dl, popup_win, DLRP_NONE);
-        
+
+
             mvwprintw(popup_win, test_passes_dl->y + 4, test_passes_dl->x, "%s", testPropsStr);
         }
             break;

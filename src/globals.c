@@ -14,6 +14,7 @@ DispayList* atr_dl;
 DispayList* mount_point_dl;
 DispayList* test_size_sel_dl;
 DispayList* test_passes_dl;
+DispayList* test_mode_dl;
 
 int update_cycle_counter;
 char is_open;
@@ -31,21 +32,31 @@ void init_globals() {
     mount_point_dl = dl_init(TRUE, FALSE, 1, 1);
     mount_point_dl->selected = 2;
 
-    test_size_sel_dl = dl_init(TRUE, 8, 4, 1);
+    test_mode_dl = dl_init(TRUE, 8, 4, 1);
+    const char* mode_str[] = {"WS", "RS", "RR", NULL};
+    dl_add_entry(test_mode_dl, DLEP_UNSELECTABLE, "mode:");
+    for(int i = 0; mode_str[i]; i++) {
+        dl_add_entry(test_mode_dl, DLEP_NONE, mode_str[i]);
+    }
+    dl_reset_sel_pos(test_mode_dl);
 
+    test_size_sel_dl = dl_init(TRUE, 8, 4, 1);
     const char* data_sizes[] = {"0001", "0016", "0064", "0128", "0512", "1024", NULL};
+    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "size:");
     for(int i = 0; data_sizes[i]; i++) {
         dl_add_entry(test_size_sel_dl, DLEP_NONE, data_sizes[i]);
     }
     dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "MB");
-
+    dl_reset_sel_pos(test_size_sel_dl);
 
     test_passes_dl = dl_init(TRUE, 8, 4, 1);
     const char* passes_n[] = {"0001", "0003", "0005", "0010", "0025", "00100", NULL};
+    dl_add_entry(test_passes_dl, DLEP_UNSELECTABLE, "passes: "); 
     for(int i = 0; passes_n[i]; i++) {
         dl_add_entry(test_passes_dl, DLEP_NONE, passes_n[i]);
     }
     dl_add_entry(test_passes_dl, DLEP_UNSELECTABLE, "TIMES");
+    dl_reset_sel_pos(test_passes_dl);
 
     reinit_windows();
 }
@@ -73,4 +84,5 @@ void free_globals() {
     dl_free(mount_point_dl);
     dl_free(test_size_sel_dl);
     dl_free(test_passes_dl);
+    dl_free(test_mode_dl);
 }

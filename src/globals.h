@@ -32,12 +32,9 @@ extern DispayList* atr_dl;
 extern DispayList* mount_point_dl;
 extern DispayList* test_size_sel_dl;
 extern DispayList* test_passes_dl;
+extern DispayList* test_mode_dl;
 
-typedef struct {
-    const char *attribute_name;
-    const char *print_prefix;
-    const char *print_postfix;
-} Atr_Print_arg;
+
 
 void init_globals();
 void reinit_windows();

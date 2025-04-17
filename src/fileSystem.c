@@ -137,3 +137,17 @@ void extract_top_dir(const char *path, char *output) {
     }
     return;
 }
+
+int print_attribute_value(const char* dir,const Atr_Print_arg arg, DispayList *dl) {
+    char buffer[MAX_READ];
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s%s", dir, arg.attribute_name);
+    read_usb_attribute(path, buffer, sizeof(buffer));
+    if(!buffer[0]) {
+        dl_add_entry(dl, DLEP_NONE,"%s: ---", arg.print_prefix);
+        return 0;
+    }
+    dl_add_entry(dl, DLEP_NONE,"%s: %s %s",
+         arg.print_prefix, buffer, arg.print_postfix ? arg.print_postfix : "");
+    return 1;
+}
