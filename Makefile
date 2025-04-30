@@ -11,22 +11,22 @@ BIN_DIR = bin
 # File discovery
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
-TARGET := $(BIN_DIR)/app
+TARGET := $(BIN_DIR)/USBSniffer
 
 # Default target
 all: $(TARGET)
 
 # Link executable
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) | $(BIN_DIR)
 	$(CC) $(CFLAGS) $(OBJECTS) $(LDFLAGS) -o $@
 
 # Compile source files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Ensure build directory exists
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+# Ensure directories exist
+$(BUILD_DIR) $(BIN_DIR):
+	mkdir -p $@
 
 # Clean build artifacts
 clean:

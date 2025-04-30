@@ -27,5 +27,5 @@ make
 ## Usage
 ```bash
 cd bin
-./app
+./USBSniffer
 ```
