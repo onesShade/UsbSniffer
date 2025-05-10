@@ -34,8 +34,6 @@ extern DispayList* test_size_sel_dl;
 extern DispayList* test_passes_dl;
 extern DispayList* test_mode_dl;
 
-
-
 void init_globals();
 void reinit_windows();
 

@@ -30,7 +30,6 @@ void init_globals() {
     atr_dl = dl_init(FALSE, FALSE, 1, 1);
 
     mount_point_dl = dl_init(TRUE, FALSE, 1, 1);
-    mount_point_dl->selected = 2;
 
     test_mode_dl = dl_init(TRUE, 8, 4, 1);
     const char* mode_str[] = {"WS", "RS", "RR", NULL};
@@ -63,9 +62,9 @@ void init_globals() {
 
 void reinit_windows() {
     if(left_win) werase(left_win);
-    left_win = newwin(LINES - 2, COLS / 3, 1, 0);
+    left_win = newwin(LINES - 1, COLS / 3, 0, 0);
     if(right_win) werase(left_win);
-    right_win = newwin(LINES - 2, COLS / 3 * 2, 1, COLS / 3);
+    right_win = newwin(LINES - 1, COLS / 3 * 2, 0, COLS / 3);
     if(bottom_win) werase(left_win);
     bottom_win = newwin(1, COLS, LINES - 1, 1);
     if(popup_win) werase(popup_win);
