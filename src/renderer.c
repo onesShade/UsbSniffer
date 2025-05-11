@@ -1,6 +1,7 @@
 #include "renderer.h"
 
 #include <ncurses.h>
+#include "dispayList.h"
 #include "globals.h"
 #include "util.h"
 #include "storageTest.h"
@@ -64,6 +65,7 @@ void draw_popup_window() {
         return;
 
     werase(popup_win);
+
     switch (selection_lw.window) {
         case storage_test_settings: {
             if (is_storage_device(selection_lw.device_name)) {
@@ -89,6 +91,8 @@ void draw_popup_window() {
         }
             break;
         case storage_test_run: {
+            dl_draw(test_screen_dl, popup_win, DLRP_NONE);
+            log_message("here");
         }
             break;
         default:

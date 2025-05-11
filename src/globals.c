@@ -1,6 +1,7 @@
 #include "globals.h"
 #include "dispayList.h"
 #include <ncurses.h>
+#include <stdbool.h>
 
 Selection selection_lw;
 
@@ -15,6 +16,7 @@ DispayList* mount_point_dl;
 DispayList* test_size_sel_dl;
 DispayList* test_passes_dl;
 DispayList* test_mode_dl;
+DispayList* test_screen_dl;
 
 int update_cycle_counter;
 char is_open;
@@ -38,6 +40,8 @@ void init_globals() {
         dl_add_entry(test_mode_dl, DLEP_NONE, mode_str[i]);
     }
     dl_reset_sel_pos(test_mode_dl);
+
+    test_screen_dl = dl_init(FALSE, 0, 1, 1);
 
     test_size_sel_dl = dl_init(TRUE, 8, 4, 1);
     const char* data_sizes[] = {"0001", "0016", "0064", "0128", "0512", "1024", NULL};

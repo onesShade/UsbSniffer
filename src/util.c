@@ -15,7 +15,7 @@
 #include <limits.h>
 #include <ncurses.h>
 #include <string.h>
-
+#include <ctype.h>
 #include "util.h"
 #include "defines.h"
 #include "fileSystem.h"
@@ -122,4 +122,30 @@ int mvwprintw_centered(WINDOW* win, int y, const char* format, ...) {
     int x = getmaxx(win) / 2 - strnlen(buff, MAX_READ) / 2;
     int res = mvwprintw(win, y, x, "%s", buff);
     return res;
+}
+
+void use_octal_escapes(char* str) {
+    char buffer[PATH_MAX];
+
+    int sp = 0;
+    int dp = 0;
+    int og_len = strnlen(str, PATH_MAX);
+
+    for(; sp < og_len; sp++, dp++) {
+        if (str[sp] == '\\' 
+            && isdigit(str[sp + 1])
+            && isdigit(str[sp + 2])
+            && isdigit(str[sp + 3])) {
+                
+            char simbol = (str[sp + 1] - '0') * 64 
+                        + (str[sp + 2] - '0') * 8 
+                        + (str[sp + 3] - '0');
+            buffer[dp] = simbol;
+            sp += 3; 
+        } else {
+            buffer[dp] = str[sp];
+        }
+    }
+    buffer[dp] = 0;
+    s_strcpy(str, buffer, PATH_MAX);
 }

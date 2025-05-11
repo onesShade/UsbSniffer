@@ -53,7 +53,7 @@ void dl_clear(DispayList* dl) {
     vector_clear(dl->entryes);
 }
 
-void dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
+DLE* dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
     char buff[PATH_MAX];
     int size = 0;
     va_list args;
@@ -63,9 +63,10 @@ void dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
     buff[MAX_DL_STR] = dlep;
     if (size >= MAX_DL_STR) {
         log_message("DL entry size overflow on %s", buff + 1);
-        return;
+        return NULL;
     }
     vector_push_back(dl->entryes, buff);
+    return (DLE*)vector_at(dl->entryes, dl->entryes->size - 1);
 }
 
 void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp) {

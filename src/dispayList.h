@@ -51,7 +51,7 @@ void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp);
 
 void dl_clear(DispayList* dl);
 
-void dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...);
+DLE* dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...);
 
 char* dl_get_selected(DispayList* dl);
 

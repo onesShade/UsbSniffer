@@ -19,11 +19,12 @@
 #include <time.h>
 #include <errno.h>
 #include <ncurses.h>
-#include <ctype.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <errno.h>
 
+#include "renderer.h"
+#include "engine.h"
 
 #include "defines.h"
 #include "globals.h"
@@ -43,18 +44,28 @@ void set_test_props() {
     snprintf(testPropsStr, MAX_READ, "Press [ENTER] to test on %d MB file %d times", testProps.data_size, testProps.number_of_passes);
 }
 
-void print_loading_bar(int done, int all) {
+void print_loading_bar(int done, int all, char* str) {
     float percentage = (float)done / (float)all;
-    char bar[32];
+    char bar[128] = {0};
 
-    bar[4] = '[';
-    for(int i = 0; i < 10; i++)
-        if(percentage > 1.f / i)
-            bar[5+i] = '=';
+    int rows, cols;
+    getmaxyx(popup_win, rows, cols);  
+
+    sprintf(bar, "%03d/%03d [", done, all);
+    const int PREFIX_SIZE = 9;
+    int BAR_SIZE = (int)((float)cols * 0.7f);
+
+    for(int i = 0; i < BAR_SIZE; i++) {
+        if((float)i/((float)BAR_SIZE) < percentage)
+            bar[i+PREFIX_SIZE] = '=';
         else
-            bar[5+i] = ' ';
-    bar[14] = ']';
-    printf("%s\r", bar);
+            bar[i+PREFIX_SIZE] = ' ';
+    }
+    bar[BAR_SIZE + PREFIX_SIZE] = ']';
+    bar[BAR_SIZE + PREFIX_SIZE + 1] = '\0';
+    
+    s_strcpy(str, bar, 127);
+    str[127] = '\0';
 }
 
 
@@ -114,10 +125,21 @@ typedef enum {
     READ_SPEED,
 } TestMode;
 
+const char* TestModeStr[] = {
+    [WRITE_SPEED] = "WRITE SPEED TEST",
+    [READ_SPEED]  = "READ SPEED TEST"
+};
 
 void run_ws_test(char* file_path, char* buffer, size_t total_size) {
     double elapsed_sec;
     struct timespec start, end;
+    dl_add_entry(test_screen_dl, DLEP_NONE, "");
+    DLE* bar_dle = dl_add_entry(test_screen_dl, DLEP_CENTERED, "[]");
+    dl_add_entry(test_screen_dl, DLEP_NONE, "");
+    print_loading_bar(0, testProps.number_of_passes, bar_dle->body);
+    draw_all_windows();
+
+    log_message("%d", bar_dle);
 
     clock_gettime(CLOCK_REALTIME, &start);
     for(int i = 0; i < testProps.number_of_passes; i++) {
@@ -125,15 +147,19 @@ void run_ws_test(char* file_path, char* buffer, size_t total_size) {
             while (getchar() != '\r');
             return;
         }
-        printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
+        print_loading_bar(i + 1, testProps.number_of_passes, bar_dle->body);
+        draw_all_windows();
     }
+    print_loading_bar(testProps.number_of_passes, testProps.number_of_passes, bar_dle->body);
     clock_gettime(CLOCK_REALTIME, &end);
 
     elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
-    printf("Write time: %.3f sec\r\n", elapsed_sec);
-    printf("Write speed: %.3f MB/s\r\n", (double)testProps.data_size * testProps.number_of_passes / elapsed_sec);    
+    dl_add_entry(test_screen_dl, DLEP_NONE, "Write time: %.3f sec", 
+        elapsed_sec);
+    dl_add_entry(test_screen_dl, DLEP_NONE, "Write speed: %.3f MB/s", 
+        (double)testProps.data_size * testProps.number_of_passes / elapsed_sec);
+    draw_all_windows();        
 }
-
 
 void run_rs_test(char* file_path, char* buffer, size_t total_size, char* out_data) {
     struct timespec start, end;
@@ -142,21 +168,29 @@ void run_rs_test(char* file_path, char* buffer, size_t total_size, char* out_dat
     if (!test_write(file_path, buffer, total_size)) 
         return;
 
+    dl_add_entry(test_screen_dl, DLEP_NONE, "");
+    DLE* bar_dle = dl_add_entry(test_screen_dl, DLEP_CENTERED, "[]");
+    dl_add_entry(test_screen_dl, DLEP_NONE, "");
+    print_loading_bar(0, testProps.number_of_passes, bar_dle->body);
+    draw_all_windows();
+
     clock_gettime(CLOCK_REALTIME, &start);
     for(int i = 0; i < testProps.number_of_passes; i++) {
         if(!test_read(file_path, out_data, total_size)) {
             while (getchar() != '\r');
             return;
         }
-        printf("[%d/%d] w\r\n", i + 1, testProps.number_of_passes);
+        print_loading_bar(i + 1, testProps.number_of_passes, bar_dle->body);
+        draw_all_windows();
     }
     clock_gettime(CLOCK_REALTIME, &end);
 
     elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
-    printf("Read time: %.3f sec\r\n", elapsed_sec);
-    printf("Read speed: %.3f MB/s\r\n", (double)testProps.data_size / elapsed_sec);
-}
-
+    dl_add_entry(test_screen_dl, DLEP_NONE, "Read time: %.3f sec", 
+        elapsed_sec);
+    dl_add_entry(test_screen_dl, DLEP_NONE, "Read speed: %.3f MB/s", 
+        (double)testProps.data_size * testProps.number_of_passes / elapsed_sec);
+    draw_all_windows();   }
 
 void run_general_test(TestMode tm) {
     const char *mount_point = dl_get_selected(mount_point_dl);
@@ -169,13 +203,24 @@ void run_general_test(TestMode tm) {
     snprintf(file_path, sizeof(file_path), "%s/%s", mount_point, TEST_FILE_NAME);
     struct timespec start, end;
 
+    dl_add_entry(test_screen_dl, DLEP_CENTERED, "RUNNING %s", TestModeStr[tm]);
 
     long seed = time(NULL);
-    printf("Creating temp test file of %d MB %d times at %s\r\n", testProps.data_size, testProps.number_of_passes, file_path);
 
+
+    dl_add_entry(test_screen_dl, DLEP_NONE, 
+        "Generating temp test data of %d MB", 
+        testProps.data_size);
+    draw_all_windows();        
     size_t total_size = (size_t)testProps.data_size * 1024 * 1024;
     char* buffer = malloc(total_size);
     char* out_data = malloc(total_size);
+
+    dl_add_entry(test_screen_dl, DLEP_NONE, 
+        "Creating temp test file of %d MB %d times at", 
+        testProps.data_size, testProps.number_of_passes);
+    dl_add_entry(test_screen_dl, DLEP_NONE, "%s", file_path);
+    draw_all_windows();        
 
     srand(seed);
     for (size_t i = 0; i < total_size; i++) {
@@ -193,7 +238,8 @@ void run_general_test(TestMode tm) {
             break;
     }
     
-    printf("File verification...\r\n");
+    dl_add_entry(test_screen_dl, DLEP_NONE, "File verification...");
+    draw_all_windows();        
 
     if(!test_read(file_path, out_data, total_size))
         return;
@@ -209,13 +255,21 @@ void run_general_test(TestMode tm) {
     free(out_data);
 
     if (errors > 0) {
-        printf("Errors found: %d\r\n", errors);
+        dl_add_entry(test_screen_dl, DLEP_NONE, 
+            "Errors found: %d\r\n", errors);
     } else {
-        printf("Test passed!\r\n");
+        dl_add_entry(test_screen_dl, DLEP_NONE, "Test passed!");
     }
 
-    printf("Press [ENTER] to exit...\r\n");
-    while (getchar() != '\r');
+    dl_add_entry(test_screen_dl, DLEP_NONE, "Press [Q] to exit...");
+    draw_all_windows();        
+    
+    while (selection_lw.window == storage_test_run) {
+        int key = getch();
+        update_keys(key);
+        draw_all_windows();      
+        msleep(MAIN_LOOP_SLEEP_TIME_MS);
+    };
 
     if (unlink(file_path)) {
         fprintf(stderr, "Failed to delete test file: %s\r\n", strerror(errno));
@@ -223,31 +277,6 @@ void run_general_test(TestMode tm) {
 
 }
 
-void use_octal_escapes(char* str) {
-    char buffer[PATH_MAX];
-
-    int sp = 0;
-    int dp = 0;
-    int og_len = strnlen(str, PATH_MAX);
-
-    for(; sp < og_len; sp++, dp++) {
-        if (str[sp] == '\\' 
-            && isdigit(str[sp + 1])
-            && isdigit(str[sp + 2])
-            && isdigit(str[sp + 3])) {
-                
-            char simbol = (str[sp + 1] - '0') * 64 
-                        + (str[sp + 2] - '0') * 8 
-                        + (str[sp + 3] - '0');
-            buffer[dp] = simbol;
-            sp += 3; 
-        } else {
-            buffer[dp] = str[sp];
-        }
-    }
-    buffer[dp] = 0;
-    s_strcpy(str, buffer, PATH_MAX);
-}
 
 void update_st_test_settings(int key) {
     dl_reset_sel_pos(mount_point_dl);
@@ -267,6 +296,8 @@ void update_st_test_settings(int key) {
         dl_iterate(test_mode_dl, +1);
     }
     if (key == '\n') {
+        selection_lw.window = storage_test_run;
+        dl_clear(test_screen_dl);
         log_message("%s", dl_get_selected(test_mode_dl));
 
         if (strncmp("WS", dl_get_selected(test_mode_dl), MAX_READ) == 0) {

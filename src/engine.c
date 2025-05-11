@@ -21,31 +21,34 @@ void update_keys(int key) {
         reinit_windows();
     }
     
-    if (selection_lw.window == device_list) { 
-        if (key == KEY_DOWN) {
+    switch (selection_lw.window) {
+        case device_list: {
+            if (key == KEY_DOWN) {
             dl_iterate(devices_dl, +1);   
             update_cycle_counter = 0;
-        }
-        if (key == KEY_UP) {
-            dl_iterate(devices_dl, -1);
-            update_cycle_counter = 0;
-        }
-        
-        if (key == 'q') {
-            is_open = FALSE;  
-        }
+            }
+            if (key == KEY_UP) {
+                dl_iterate(devices_dl, -1);
+                update_cycle_counter = 0;
+            }
+            
+            if (key == 'q') {
+                is_open = FALSE;  
+            }
 
-        if(key == KEY_F(2) && is_storage_device(selection_lw.device_name)) {
-            selection_lw.window = storage_test_settings;
-            set_test_props();
-        }
-    }
-    if (selection_lw.window == storage_test_settings) {
-        update_st_test_settings(key);
-    }
-
-    if(dl_get_selected(devices_dl)) {
-        s_strcpy(selection_lw.device_name, dl_get_selected(devices_dl), MAX_DL_STR);
+            if (key == KEY_F(2) && is_storage_device(selection_lw.device_name)) {
+                selection_lw.window = storage_test_settings;
+                set_test_props();
+            }
+        } break;
+        case storage_test_settings: {
+            update_st_test_settings(key);
+        } break;
+        case storage_test_run: {
+            if (key == 'q') {
+                selection_lw.window = device_list;
+            }
+        } break;
     }
 }
 
@@ -70,6 +73,10 @@ void update_devices() {
 
     dl_sort_natural(devices_dl);
     dl_reset_sel_pos(devices_dl);
+
+    if(dl_get_selected(devices_dl)) {
+        s_strcpy(selection_lw.device_name, dl_get_selected(devices_dl), MAX_DL_STR);
+    }
 }
 
 
