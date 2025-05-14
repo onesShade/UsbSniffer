@@ -12,8 +12,8 @@ int main() {
     while (is_open) {
         int key = getch();
         update_keys(key);
+
         update_all_windows();
-        
         draw_all_windows();
 
         msleep(MAIN_LOOP_SLEEP_TIME_MS);

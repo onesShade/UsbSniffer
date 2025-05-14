@@ -70,7 +70,6 @@ DLE* dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
 }
 
 void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp) {
-
     const DLR dlr = *((const DLR*)&dlrp);
     if (!dl->horizontal_shift) {
         for(size_t line = 0; line < dl->entryes->size; line++) {
@@ -117,8 +116,7 @@ void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp) {
 }
 
 char* dl_get_selected(DispayList* dl) {
-    if(!dl->selectable) {
-        log_message("DL not selectable");
+    if(!dl->selectable) {   
         return NULL;
     }
     if(!dl->entryes->size) {

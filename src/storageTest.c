@@ -55,11 +55,11 @@ void print_loading_bar(int done, int all, char* str) {
     const int PREFIX_SIZE = 9;
     int BAR_SIZE = (int)((float)cols * 0.7f);
 
-    for(int i = 0; i < BAR_SIZE; i++) {
-        if((float)i/((float)BAR_SIZE) < percentage)
-            bar[i+PREFIX_SIZE] = '=';
+    for (int i = 0; i < BAR_SIZE; i++) {
+        if ((float)i/((float)BAR_SIZE) < percentage)
+            bar[i + PREFIX_SIZE] = '=';
         else
-            bar[i+PREFIX_SIZE] = ' ';
+            bar[i + PREFIX_SIZE] = ' ';
     }
     bar[BAR_SIZE + PREFIX_SIZE] = ']';
     bar[BAR_SIZE + PREFIX_SIZE + 1] = '\0';
@@ -68,25 +68,24 @@ void print_loading_bar(int done, int all, char* str) {
     str[127] = '\0';
 }
 
-
 int test_write(const char* path, const char* data, size_t total_size) {
     void* aligned_buf;
     if (posix_memalign(&aligned_buf, 4096, total_size)) {
-        fprintf(stderr, "Memory alignment failed\n");
+        log_message("Memory alignment failed\n");
         return 0;
     }
     memcpy(aligned_buf, data, total_size);
 
     int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_DIRECT | O_SYNC);
     if (fd == -1) {
-        fprintf(stderr, "Open error: %s\n", strerror(errno));
+        log_message("Open error: %s", strerror(errno));
         free(aligned_buf);
         return 0;
     }
 
     ssize_t written = write(fd, aligned_buf, total_size);
     if (written == -1) {
-        fprintf(stderr, "Write error: %s\n", strerror(errno));
+        log_message("Write error: %s", strerror(errno));
     }
 
     free(aligned_buf);
@@ -123,11 +122,13 @@ int test_read(const char* path, char* out, size_t total_size) {
 typedef enum {
     WRITE_SPEED,
     READ_SPEED,
+    RANDOM_READ_SPEED,
 } TestMode;
 
 const char* TestModeStr[] = {
     [WRITE_SPEED] = "WRITE SPEED TEST",
-    [READ_SPEED]  = "READ SPEED TEST"
+    [READ_SPEED]  = "READ SPEED TEST",
+    [RANDOM_READ_SPEED] = "RANDOM READ SPEED TEST",
 };
 
 void run_ws_test(char* file_path, char* buffer, size_t total_size) {
@@ -138,8 +139,6 @@ void run_ws_test(char* file_path, char* buffer, size_t total_size) {
     dl_add_entry(test_screen_dl, DLEP_NONE, "");
     print_loading_bar(0, testProps.number_of_passes, bar_dle->body);
     draw_all_windows();
-
-    log_message("%d", bar_dle);
 
     clock_gettime(CLOCK_REALTIME, &start);
     for(int i = 0; i < testProps.number_of_passes; i++) {
@@ -165,8 +164,9 @@ void run_rs_test(char* file_path, char* buffer, size_t total_size, char* out_dat
     struct timespec start, end;
     double elapsed_sec;
 
-    if (!test_write(file_path, buffer, total_size)) 
+    if (!test_write(file_path, buffer, total_size)) {
         return;
+    }
 
     dl_add_entry(test_screen_dl, DLEP_NONE, "");
     DLE* bar_dle = dl_add_entry(test_screen_dl, DLEP_CENTERED, "[]");
@@ -190,7 +190,67 @@ void run_rs_test(char* file_path, char* buffer, size_t total_size, char* out_dat
         elapsed_sec);
     dl_add_entry(test_screen_dl, DLEP_NONE, "Read speed: %.3f MB/s", 
         (double)testProps.data_size * testProps.number_of_passes / elapsed_sec);
-    draw_all_windows();   }
+    draw_all_windows();   
+}
+
+#define RANDOM_READ_BLOCK_SIZE (4 * 1024)  // 4KB blocks
+#define RANDOM_READ_ITERATIONS 999
+
+void run_random_read_test(char* file_path, char* buffer, size_t total_size) {
+    void* aligned_buf;
+    if (posix_memalign(&aligned_buf, 4096, RANDOM_READ_BLOCK_SIZE)) {
+        log_message("Memory alignment failed", strerror(errno));
+        return;
+    }
+
+    if (!test_write(file_path, buffer, total_size)) 
+        return;
+
+    int fd = open(file_path, O_RDONLY | O_DIRECT);
+    if (fd == -1) {
+        log_message("Open error", strerror(errno));
+        free(aligned_buf);
+        return;
+    }
+
+    struct timespec start, end;
+    double elapsed_sec;
+    
+    dl_add_entry(test_screen_dl, DLEP_NONE, "");
+    DLE* bar_dle = dl_add_entry(test_screen_dl, DLEP_CENTERED, "[]");
+    dl_add_entry(test_screen_dl, DLEP_NONE, "");
+    print_loading_bar(0, RANDOM_READ_ITERATIONS, bar_dle->body);
+    draw_all_windows();
+
+    clock_gettime(CLOCK_REALTIME, &start);
+    for (int i = 0; i < RANDOM_READ_ITERATIONS; i++) {
+        off_t offset = (rand() % (total_size / RANDOM_READ_BLOCK_SIZE)) * RANDOM_READ_BLOCK_SIZE;
+        if (lseek(fd, offset, SEEK_SET) == -1) {
+            log_message("Seek error: %s", strerror(errno));
+            break;
+        }
+        
+        ssize_t bytes_read = read(fd, aligned_buf, RANDOM_READ_BLOCK_SIZE);
+        if (bytes_read == -1) {
+            log_message("Read error: %s", strerror(errno));
+            break;
+        }
+        
+        print_loading_bar(i + 1, RANDOM_READ_ITERATIONS, bar_dle->body);
+        if (i % 10 == 0) {
+            draw_all_windows();
+        }
+    }
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    elapsed_sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1.0e-9;
+    dl_add_entry(test_screen_dl, DLEP_NONE, "Random read time: %.3f sec", elapsed_sec);
+    dl_add_entry(test_screen_dl, DLEP_NONE, "Random read speed: %.3f MB/s", 
+        (RANDOM_READ_ITERATIONS * RANDOM_READ_BLOCK_SIZE) / (elapsed_sec * 1024 * 1024));
+    draw_all_windows();        
+    free(aligned_buf);
+    close(fd);
+}
 
 void run_general_test(TestMode tm) {
     const char *mount_point = dl_get_selected(mount_point_dl);
@@ -206,7 +266,6 @@ void run_general_test(TestMode tm) {
     dl_add_entry(test_screen_dl, DLEP_CENTERED, "RUNNING %s", TestModeStr[tm]);
 
     long seed = time(NULL);
-
 
     dl_add_entry(test_screen_dl, DLEP_NONE, 
         "Generating temp test data of %d MB", 
@@ -233,6 +292,9 @@ void run_general_test(TestMode tm) {
             break;
         case READ_SPEED:
             run_rs_test(file_path, buffer, total_size, out_data);
+            break;
+        case RANDOM_READ_SPEED:
+            run_random_read_test(file_path, buffer, total_size);
             break;
         default:
             break;
@@ -272,11 +334,10 @@ void run_general_test(TestMode tm) {
     };
 
     if (unlink(file_path)) {
-        fprintf(stderr, "Failed to delete test file: %s\r\n", strerror(errno));
+        log_message("Failed to delete test file: %s", strerror(errno));
     }
 
 }
-
 
 void update_st_test_settings(int key) {
     dl_reset_sel_pos(mount_point_dl);
@@ -306,6 +367,10 @@ void update_st_test_settings(int key) {
         
         if (strncmp("RS", dl_get_selected(test_mode_dl), MAX_READ) == 0) {
             run_general_test(READ_SPEED);
+        }
+
+        if (strncmp("RR", dl_get_selected(test_mode_dl), MAX_READ) == 0) {
+            run_general_test(RANDOM_READ_SPEED);
         }
         
         selection_lw.window = device_list;
