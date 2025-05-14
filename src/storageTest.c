@@ -44,14 +44,16 @@ void set_test_props() {
     snprintf(testPropsStr, MAX_READ, "Press [ENTER] to test on %d MB file %d times", testProps.data_size, testProps.number_of_passes);
 }
 
+#define BAR_MAX_LEN 256
+
 void print_loading_bar(int done, int all, char* str) {
     float percentage = (float)done / (float)all;
-    char bar[128] = {0};
+    char bar[BAR_MAX_LEN] = {0};
 
     int rows, cols;
     getmaxyx(popup_win, rows, cols);  
 
-    sprintf(bar, "%03d/%03d [", done, all);
+    snprintf(bar, BAR_MAX_LEN, "%03d/%03d [", done, all);
     const int PREFIX_SIZE = 9;
     int BAR_SIZE = (int)((float)cols * 0.7f);
 
@@ -64,7 +66,7 @@ void print_loading_bar(int done, int all, char* str) {
     bar[BAR_SIZE + PREFIX_SIZE] = ']';
     bar[BAR_SIZE + PREFIX_SIZE + 1] = '\0';
     
-    s_strcpy(str, bar, 127);
+    s_strcpy(str, bar, BAR_MAX_LEN - 1);
     str[127] = '\0';
 }
 
