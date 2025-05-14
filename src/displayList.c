@@ -12,8 +12,6 @@
 #include <string.h>
 #include <ctype.h>
 
-
-
 DispayList* dl_init(const char selectable, const char horizontal_shift, const int x, const int y) {
     DispayList* dl = malloc(sizeof(DispayList));
     dl->selectable = selectable;
@@ -25,10 +23,40 @@ DispayList* dl_init(const char selectable, const char horizontal_shift, const in
     return dl;
 }
 
+DispayList* dl_init_d(DLP dlp, const int x, const int y) {
+    if (dlp.horizontal) {
+        log_message("ERR trying to use default constructor with horizontal DLP");
+        return NULL;
+    }
+
+    DispayList* dl = malloc(sizeof(DispayList));
+    dl->x = x;
+    dl->y = y;
+    dl->dlp = dlp;
+
+    dl->entryes = vector_init(sizeof(DLE), 16);
+    return dl;
+}
+
+DispayList* dl_init_h(DLP dlp, const int x, const int y, const char horizontal_shift) {
+    if (!dlp.horizontal) {
+        log_message("ERR trying to use horizontal constructor with default DLP");
+        return NULL;
+    }
+    DispayList* dl = malloc(sizeof(DispayList));
+    dl->x = x;
+    dl->y = y;
+    dl->dlp = dlp;
+    dl->horizontal_shift = horizontal_shift;
+    dl->entryes = vector_init(sizeof(DLE), 16);
+    return dl;
+}
+
 int dl_iterate(DispayList* dl, int move) {
     if(!dl->entryes->size) {
         return 0;
     }
+
     if((move != 1 && move != -1) || !dl->selectable) {
         log_message("dl_iterate exception");
         return 0;
@@ -53,7 +81,7 @@ void dl_clear(DispayList* dl) {
     vector_clear(dl->entryes);
 }
 
-DLE* dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
+DLE* dl_add_entry(DispayList* dl, DLEPe dlep, const char *format, ...) {
     char buff[PATH_MAX];
     int size = 0;
     va_list args;
@@ -69,8 +97,8 @@ DLE* dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...) {
     return (DLE*)vector_at(dl->entryes, dl->entryes->size - 1);
 }
 
-void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp) {
-    const DLR dlr = *((const DLR*)&dlrp);
+void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp) {
+    const DLRP dlr = *((const DLRP*)&dlrp);
     if (!dl->horizontal_shift) {
         for(size_t line = 0; line < dl->entryes->size; line++) {
 
@@ -146,7 +174,6 @@ int natural_compare_dle(const void *a, const void *b) {
     const DLE *second = (const DLE*)b;
     const char *s1 = first->body;
     const char *s2 = second->body;
-
     
     while (*s1 && *s2) {
         if (isdigit(*s1) && isdigit(*s2)) {

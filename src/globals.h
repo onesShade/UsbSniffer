@@ -31,9 +31,11 @@ extern DispayList* devices_dl;
 extern DispayList* atr_dl;
 extern DispayList* mount_point_dl;
 extern DispayList* test_size_sel_dl;
-extern DispayList* test_passes_dl;
-extern DispayList* test_mode_dl;
+extern DispayList* test_passes_sel_dl;
+extern DispayList* test_mode_sel_dl;
 extern DispayList* test_screen_dl;
+
+void update_sel_dls();
 
 void init_globals();
 void reinit_windows();

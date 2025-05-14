@@ -39,7 +39,7 @@ void set_test_props() {
     }
 
     sscanf(dl_get_selected(test_size_sel_dl), "%d", &testProps.data_size);
-    sscanf(dl_get_selected(test_passes_dl), "%d", &testProps.number_of_passes);
+    sscanf(dl_get_selected(test_passes_sel_dl), "%d", &testProps.number_of_passes);
     
     snprintf(testPropsStr, MAX_READ, "Press [ENTER] to test on %d MB file %d times", testProps.data_size, testProps.number_of_passes);
 }
@@ -353,25 +353,26 @@ void update_st_test_settings(int key) {
         dl_iterate(test_size_sel_dl, +1);
     }
     if (key == 'n') {
-        dl_iterate(test_passes_dl, +1);
+        dl_iterate(test_passes_sel_dl, +1);
     }
     if (key == 'v') {
-        dl_iterate(test_mode_dl, +1);
+        dl_iterate(test_mode_sel_dl, +1);
+        update_sel_dls();
     }
     if (key == '\n') {
         selection_lw.window = storage_test_run;
         dl_clear(test_screen_dl);
-        log_message("%s", dl_get_selected(test_mode_dl));
+        log_message("%s", dl_get_selected(test_mode_sel_dl));
 
-        if (strncmp("WS", dl_get_selected(test_mode_dl), MAX_READ) == 0) {
+        if (strncmp("WS", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
             run_general_test(WRITE_SPEED);
         }
         
-        if (strncmp("RS", dl_get_selected(test_mode_dl), MAX_READ) == 0) {
+        if (strncmp("RS", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
             run_general_test(READ_SPEED);
         }
 
-        if (strncmp("RR", dl_get_selected(test_mode_dl), MAX_READ) == 0) {
+        if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
             run_general_test(RANDOM_READ_SPEED);
         }
         

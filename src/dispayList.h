@@ -8,50 +8,68 @@
 typedef struct {
     unsigned char centered : 1;
     unsigned char unselectable : 1;
-    unsigned char tag1 : 1;
-}DLEProps;
+} DLEP;
 
 typedef struct {
-    char body[MAX_DL_STR];
-    DLEProps prop;
-}DLE;   
+    unsigned char selectable : 1;
+    unsigned char invisible : 1;
+    unsigned char horizontal : 1;
+} DLP;
+
+typedef struct {
+    unsigned char hide_selection : 1;
+} DLRP;
+
+typedef enum {
+    DLEP_NONE = 0,
+    DLEP_CENTERED = 1,
+    DLEP_UNSELECTABLE = 2,
+} DLEPe;
+
+typedef enum {
+    DLRP_NONE = 0,
+    DLRP_HIDE_SELECTION = 1,
+} DLRPe;
+
+typedef enum {
+    DLP_NONE = 0,
+    DLP_SELECTABLE = 1,
+    DLP_INVISIBLE = 2,
+    DLP_HORIZONTAL = 4,
+} DLPe;
 
 typedef struct {
     Vector* entryes;
     size_t selected;
     char selectable;
+    char invisible;
+    DLP dlp;
     char horizontal_shift;
     int x;
     int y;
 } DispayList;
 
 typedef struct {
-    unsigned char hide_selection : 1;
-}DLR;
-
-typedef enum {
-    DLEP_NONE = 0,
-    DLEP_CENTERED = 1,
-    DLEP_UNSELECTABLE = 2,
-    DLEP_TAG1 = 4,
-}DLEProperties;
-
-typedef enum {
-    DLRP_NONE = 0,
-    DLRP_HIDE_SELECTION = 1,
-}DLRProperties;
+    char body[MAX_DL_STR];
+    DLEP prop;
+} DLE;   
 
 DispayList* dl_init(const char selectable, const char horizontal_shift, const int x, const int y);
+
+DispayList* dl_init_d(DLP dlp, const int x, const int y);
+
+DispayList* dl_init_h(DLP dlp, const int x, const int y, const char horizontal_shift);
+
 
 void dl_free(DispayList* dl);
 
 int dl_iterate(DispayList* dl, int move);
 
-void dl_draw(const DispayList* dl, WINDOW* win, const DLRProperties dlrp);
+void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp);
 
 void dl_clear(DispayList* dl);
 
-DLE* dl_add_entry(DispayList* dl, DLEProperties dlep, const char *format, ...);
+DLE* dl_add_entry(DispayList* dl, DLEPe dlep, const char *format, ...);
 
 char* dl_get_selected(DispayList* dl);
 

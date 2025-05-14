@@ -2,6 +2,7 @@
 #include "dispayList.h"
 #include <ncurses.h>
 #include <stdbool.h>
+#include <string.h>
 
 Selection selection_lw;
 
@@ -14,12 +15,47 @@ DispayList* devices_dl;
 DispayList* atr_dl;
 DispayList* mount_point_dl;
 DispayList* test_size_sel_dl;
-DispayList* test_passes_dl;
-DispayList* test_mode_dl;
+DispayList* test_block_size_sel_dl;
+DispayList* test_passes_sel_dl;
+DispayList* test_mode_sel_dl;
 DispayList* test_screen_dl;
 
 int update_cycle_counter;
 char is_open;
+
+void update_sel_dls() {
+    dl_clear(test_size_sel_dl);
+    
+    const char* data_sizes[] = {"0001", "0016", "0064", "0128", "0512", "1024", NULL};
+
+    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "size:");
+    for(int i = 0; data_sizes[i]; i++) {
+        dl_add_entry(test_size_sel_dl, DLEP_NONE, data_sizes[i]);
+    }
+    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "MB");
+    dl_reset_sel_pos(test_size_sel_dl);
+
+    const char* passes_n[] = {"0001", "0003", "0005", "0010", "0025", "0100","0500",NULL};
+    const char* passes_n_rand[] = {"0100", "0250", "0500", "1000", "2000", "5000","10000",NULL};
+
+    dl_clear(test_passes_sel_dl);
+    dl_clear(test_passes_sel_dl);
+
+
+    dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "passes: "); 
+    if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
+        for (int i = 0; passes_n_rand[i]; i++) {
+            dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n_rand[i]);
+        }
+    } else {
+        for (int i = 0; passes_n[i]; i++) {
+            dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n[i]);
+        }
+    }
+    dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "TIMES");
+    dl_reset_sel_pos(test_passes_sel_dl);
+
+}
 
 void init_globals() {
     is_open = TRUE;
@@ -32,34 +68,21 @@ void init_globals() {
     atr_dl = dl_init(FALSE, FALSE, 1, 1);
 
     mount_point_dl = dl_init(TRUE, FALSE, 1, 1);
+    test_mode_sel_dl = dl_init(TRUE, 8, 4, 1);
+    test_size_sel_dl = dl_init(TRUE, 8, 4, 1);
+    test_passes_sel_dl = dl_init(TRUE, 8, 4, 1);
+    test_block_size_sel_dl = dl_init(TRUE, 8, 4, 1);
 
-    test_mode_dl = dl_init(TRUE, 8, 4, 1);
     const char* mode_str[] = {"WS", "RS", "RR", NULL};
-    dl_add_entry(test_mode_dl, DLEP_UNSELECTABLE, "mode:");
+    dl_add_entry(test_mode_sel_dl, DLEP_UNSELECTABLE, "mode:");
     for(int i = 0; mode_str[i]; i++) {
-        dl_add_entry(test_mode_dl, DLEP_NONE, mode_str[i]);
+        dl_add_entry(test_mode_sel_dl, DLEP_NONE, mode_str[i]);
     }
-    dl_reset_sel_pos(test_mode_dl);
+
+    update_sel_dls();
 
     test_screen_dl = dl_init(FALSE, 0, 1, 1);
-
-    test_size_sel_dl = dl_init(TRUE, 8, 4, 1);
-    const char* data_sizes[] = {"0001", "0016", "0064", "0128", "0512", "1024", NULL};
-    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "size:");
-    for(int i = 0; data_sizes[i]; i++) {
-        dl_add_entry(test_size_sel_dl, DLEP_NONE, data_sizes[i]);
-    }
-    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "MB");
-    dl_reset_sel_pos(test_size_sel_dl);
-
-    test_passes_dl = dl_init(TRUE, 8, 4, 1);
-    const char* passes_n[] = {"0001", "0003", "0005", "0010", "0025", "00100", NULL};
-    dl_add_entry(test_passes_dl, DLEP_UNSELECTABLE, "passes: "); 
-    for(int i = 0; passes_n[i]; i++) {
-        dl_add_entry(test_passes_dl, DLEP_NONE, passes_n[i]);
-    }
-    dl_add_entry(test_passes_dl, DLEP_UNSELECTABLE, "TIMES");
-    dl_reset_sel_pos(test_passes_dl);
+    dl_reset_sel_pos(test_mode_sel_dl);
 
     reinit_windows();
 }
@@ -86,6 +109,7 @@ void free_globals() {
     dl_free(atr_dl);
     dl_free(mount_point_dl);
     dl_free(test_size_sel_dl);
-    dl_free(test_passes_dl);
-    dl_free(test_mode_dl);
+    dl_free(test_passes_sel_dl);
+    dl_free(test_mode_sel_dl);
+    dl_free(test_block_size_sel_dl);
 }

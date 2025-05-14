@@ -77,17 +77,17 @@ void draw_popup_window() {
 
             mvwprintw_centered(popup_win, y_p + 1, "---TEST SETTINGS---");
             
-            dl_set_pos(test_mode_dl, test_mode_dl->x, y_p + 3);
-            dl_draw(test_mode_dl, popup_win, DLRP_NONE);
+            dl_set_pos(test_mode_sel_dl, test_mode_sel_dl->x, y_p + 3);
+            dl_draw(test_mode_sel_dl, popup_win, DLRP_NONE);
         
-            dl_set_pos(test_size_sel_dl, test_passes_dl->x, y_p + 5);
+            dl_set_pos(test_size_sel_dl, test_passes_sel_dl->x, y_p + 5);
             dl_draw(test_size_sel_dl, popup_win, DLRP_NONE);
         
-            dl_set_pos(test_passes_dl, test_passes_dl->x, y_p + 7);
-            dl_draw(test_passes_dl, popup_win, DLRP_NONE);
+            dl_set_pos(test_passes_sel_dl, test_passes_sel_dl->x, y_p + 7);
+            dl_draw(test_passes_sel_dl, popup_win, DLRP_NONE);
 
 
-            mvwprintw(popup_win, test_passes_dl->y + 4, test_passes_dl->x, "%s", testPropsStr);
+            mvwprintw(popup_win, test_passes_sel_dl->y + 4, test_passes_sel_dl->x, "%s", testPropsStr);
         }
             break;
         case storage_test_run: {
