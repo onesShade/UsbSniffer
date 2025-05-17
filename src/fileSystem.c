@@ -81,9 +81,7 @@ int find_first_matching_entry(const char* path, const FindEntryArg arg, char *re
         log_message("Failed to open dir: %s", path);
         return 0;
     }
-#ifdef DEBUG
-    log_message("Travecrcing to path %s", path);
-#endif
+
     int found = 0;
     const struct dirent * ent;
     while ((ent = readdir(dir)) != NULL) {
