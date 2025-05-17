@@ -2,8 +2,8 @@
 #define DISPLAY_LIST
 
 #include "vector.h"
-#include <ncurses.h>
 #include "defines.h"
+#include <ncurses.h>
 
 typedef struct {
     unsigned char centered : 1;
