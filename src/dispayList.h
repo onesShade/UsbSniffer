@@ -11,12 +11,6 @@ typedef struct {
 } DLEP;
 
 typedef struct {
-    unsigned char selectable : 1;
-    unsigned char invisible : 1;
-    unsigned char horizontal : 1;
-} DLP;
-
-typedef struct {
     unsigned char hide_selection : 1;
 } DLRP;
 
@@ -31,19 +25,11 @@ typedef enum {
     DLRP_HIDE_SELECTION = 1,
 } DLRPe;
 
-typedef enum {
-    DLP_NONE = 0,
-    DLP_SELECTABLE = 1,
-    DLP_INVISIBLE = 2,
-    DLP_HORIZONTAL = 4,
-} DLPe;
-
 typedef struct {
     Vector* entryes;
     size_t selected;
     char selectable;
     char invisible;
-    DLP dlp;
     char horizontal_shift;
     int x;
     int y;
@@ -55,11 +41,6 @@ typedef struct {
 } DLE;   
 
 DispayList* dl_init(const char selectable, const char horizontal_shift, const int x, const int y);
-
-DispayList* dl_init_d(DLP dlp, const int x, const int y);
-
-DispayList* dl_init_h(DLP dlp, const int x, const int y, const char horizontal_shift);
-
 
 void dl_free(DispayList* dl);
 

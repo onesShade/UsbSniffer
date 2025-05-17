@@ -23,35 +23,6 @@ DispayList* dl_init(const char selectable, const char horizontal_shift, const in
     return dl;
 }
 
-DispayList* dl_init_d(DLP dlp, const int x, const int y) {
-    if (dlp.horizontal) {
-        log_message("ERR trying to use default constructor with horizontal DLP");
-        return NULL;
-    }
-
-    DispayList* dl = malloc(sizeof(DispayList));
-    dl->x = x;
-    dl->y = y;
-    dl->dlp = dlp;
-
-    dl->entryes = vector_init(sizeof(DLE), 16);
-    return dl;
-}
-
-DispayList* dl_init_h(DLP dlp, const int x, const int y, const char horizontal_shift) {
-    if (!dlp.horizontal) {
-        log_message("ERR trying to use horizontal constructor with default DLP");
-        return NULL;
-    }
-    DispayList* dl = malloc(sizeof(DispayList));
-    dl->x = x;
-    dl->y = y;
-    dl->dlp = dlp;
-    dl->horizontal_shift = horizontal_shift;
-    dl->entryes = vector_init(sizeof(DLE), 16);
-    return dl;
-}
-
 int dl_iterate(DispayList* dl, int move) {
     if(!dl->entryes->size) {
         return 0;
