@@ -19,12 +19,13 @@ DispayList* dl_init(const char selectable, const char horizontal_shift, const in
     dl->x = x;
     dl->y = y;
     dl->horizontal_shift = horizontal_shift;
+    dl->invisible = FALSE;
     dl->entryes = vector_init(sizeof(DLE), 16);
     return dl;
 }
 
 int dl_iterate(DispayList* dl, int move) {
-    if(!dl->entryes->size) {
+    if(!dl->entryes->size || dl->invisible) {
         return 0;
     }
 
@@ -69,6 +70,10 @@ DLE* dl_add_entry(DispayList* dl, DLEPe dlep, const char *format, ...) {
 }
 
 void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp) {
+    if (dl->invisible) {
+        return;
+    }
+
     const DLRP dlr = *((const DLRP*)&dlrp);
     if (!dl->horizontal_shift) {
         for(size_t line = 0; line < dl->entryes->size; line++) {
@@ -111,7 +116,6 @@ void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp) {
             }
         }
     }
-
 }
 
 char* dl_get_selected(DispayList* dl) {

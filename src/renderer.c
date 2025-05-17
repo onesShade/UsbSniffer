@@ -1,6 +1,7 @@
 #include "renderer.h"
 
 #include <ncurses.h>
+#include <string.h>
 #include "dispayList.h"
 #include "globals.h"
 #include "util.h"
@@ -53,6 +54,9 @@ void draw_bottom_window() {
         mvwprintw(bottom_win, 0, x += 16, "V - TEST MODE");
         mvwprintw(bottom_win, 0, x += 16, "B - FILE SIZE");
         mvwprintw(bottom_win, 0, x += 16, "N - PASSES");
+        if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
+            mvwprintw(bottom_win, 0, x += 16, "L - BLOCK");
+        }
     }
 
     mvwprintw(bottom_win, 0, x += 16, "Q - BACK");
@@ -86,13 +90,14 @@ void draw_popup_window() {
             dl_set_pos(test_passes_sel_dl, test_passes_sel_dl->x, y_p + 7);
             dl_draw(test_passes_sel_dl, popup_win, DLRP_NONE);
 
+            dl_set_pos(test_block_size_sel_dl, test_block_size_sel_dl->x, y_p + 9);
+            dl_draw(test_block_size_sel_dl, popup_win, DLRP_NONE);
 
-            mvwprintw(popup_win, test_passes_sel_dl->y + 4, test_passes_sel_dl->x, "%s", testPropsStr);
+            mvwprintw(popup_win, test_passes_sel_dl->y + 6, test_passes_sel_dl->x, "%s", testPropsStr);
         }
             break;
         case storage_test_run: {
             dl_draw(test_screen_dl, popup_win, DLRP_NONE);
-            log_message("here");
         }
             break;
         default:

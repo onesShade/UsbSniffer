@@ -3,12 +3,6 @@
 
 #include "globals.h"
 
-typedef struct {
-    int data_size;
-    int number_of_passes;
-} TestProps;
-
-extern TestProps testProps;
 extern char testPropsStr[MAX_READ];
 
 void set_test_props();

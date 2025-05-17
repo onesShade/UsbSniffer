@@ -24,33 +24,23 @@ int update_cycle_counter;
 char is_open;
 
 void update_sel_dls() {
-    dl_clear(test_size_sel_dl);
-    
-    const char* data_sizes[] = {"0001", "0016", "0064", "0128", "0512", "1024", NULL};
-
-    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "size:");
-    for(int i = 0; data_sizes[i]; i++) {
-        dl_add_entry(test_size_sel_dl, DLEP_NONE, data_sizes[i]);
-    }
-    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "MB");
-    dl_reset_sel_pos(test_size_sel_dl);
-
     const char* passes_n[] = {"0001", "0003", "0005", "0010", "0025", "0100","0500",NULL};
     const char* passes_n_rand[] = {"0100", "0250", "0500", "1000", "2000", "5000","10000",NULL};
 
     dl_clear(test_passes_sel_dl);
     dl_clear(test_passes_sel_dl);
 
-
     dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "passes: "); 
     if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
         for (int i = 0; passes_n_rand[i]; i++) {
             dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n_rand[i]);
         }
+        test_block_size_sel_dl->invisible = FALSE;
     } else {
         for (int i = 0; passes_n[i]; i++) {
             dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n[i]);
         }
+        test_block_size_sel_dl->invisible = TRUE;
     }
     dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "TIMES");
     dl_reset_sel_pos(test_passes_sel_dl);
@@ -72,18 +62,32 @@ void init_globals() {
     test_size_sel_dl = dl_init(TRUE, 8, 4, 1);
     test_passes_sel_dl = dl_init(TRUE, 8, 4, 1);
     test_block_size_sel_dl = dl_init(TRUE, 8, 4, 1);
+    test_screen_dl = dl_init(FALSE, 0, 1, 1);
 
     const char* mode_str[] = {"WS", "RS", "RR", NULL};
     dl_add_entry(test_mode_sel_dl, DLEP_UNSELECTABLE, "mode:");
     for(int i = 0; mode_str[i]; i++) {
         dl_add_entry(test_mode_sel_dl, DLEP_NONE, mode_str[i]);
     }
-
-    update_sel_dls();
-
-    test_screen_dl = dl_init(FALSE, 0, 1, 1);
     dl_reset_sel_pos(test_mode_sel_dl);
 
+    const char* data_sizes[] = {"0001", "0016", "0064", "0128", "0512", "1024", NULL};
+    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "size:");
+    for(int i = 0; data_sizes[i]; i++) {
+        dl_add_entry(test_size_sel_dl, DLEP_NONE, data_sizes[i]);
+    }
+    dl_add_entry(test_size_sel_dl, DLEP_UNSELECTABLE, "MB");
+    dl_reset_sel_pos(test_size_sel_dl);
+
+    const char* block_sizes[] = {"001", "004", "008", "016", "032", "064", NULL};
+    dl_add_entry(test_block_size_sel_dl, DLEP_UNSELECTABLE, "block:");
+    for(int i = 0; block_sizes[i]; i++) {
+        dl_add_entry(test_block_size_sel_dl, DLEP_NONE, data_sizes[i]);
+    }
+    dl_add_entry(test_block_size_sel_dl, DLEP_UNSELECTABLE, "KB");
+    dl_reset_sel_pos(test_block_size_sel_dl);
+
+    update_sel_dls();
     reinit_windows();
 }
 
