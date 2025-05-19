@@ -2,7 +2,6 @@
 #define _POSIX_C_SOURCE 199309L 
 #define _GNU_SOURCE
 
-#include <ncurses.h>
 #include "dispayList.h"
 #include "util.h"
 #include "vector.h"
