@@ -20,7 +20,7 @@ typedef struct {
     char block_path[PATH_MAX];
 } Selection;
 
-extern Selection selection_lw;
+extern Selection selection;
 extern int update_cycle_counter;
 extern char is_open;
 

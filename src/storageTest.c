@@ -337,7 +337,7 @@ void run_general_test(TestMode tm) {
     draw_all_windows();        
     
     set_current_window(storage_test_results);
-    while (selection_lw.window == storage_test_results) {
+    while (selection.window == storage_test_results) {
         int key = getch();
         update_keys(key);
         draw_all_windows();      

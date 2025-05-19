@@ -31,7 +31,7 @@ void draw_left_window() {
 void draw_right_window() {
     werase(right_win);
     dl_draw(atr_dl, right_win, DLRP_NONE);
-    if (is_storage_device(selection_lw.device_name)) {
+    if (is_storage_device(selection.device_name)) {
         dl_set_pos(mount_point_dl, 1,  atr_dl->entryes->size + atr_dl->y + 2);
         dl_draw(mount_point_dl, right_win, DLRP_HIDE_SELECTION);
     }
@@ -46,14 +46,14 @@ void draw_bottom_window() {
 }
 
 void draw_popup_window() {
-    if(selection_lw.window == device_list)
+    if(selection.window == device_list)
         return;
 
     werase(popup_win);
 
-    switch (selection_lw.window) {
+    switch (selection.window) {
         case storage_test_settings: {
-            if (is_storage_device(selection_lw.device_name)) {
+            if (is_storage_device(selection.device_name)) {
                 dl_set_pos(mount_point_dl, 4, 1);
                 dl_draw(mount_point_dl, popup_win, DLRP_NONE);
             }

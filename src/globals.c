@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-Selection selection_lw;
+Selection selection;
 
 WINDOW *left_win;
 WINDOW *right_win;
@@ -32,7 +32,7 @@ void init_globals() {
     bottom_win = NULL;
     popup_win = NULL;
 
-    selection_lw.device_name[0] = '\0';
+    selection.device_name[0] = '\0';
 
     devices_dl = dl_init(DLP_SELECTABLE, 1, 1);
     atr_dl = dl_init(DLP_NONE, 1, 1);
