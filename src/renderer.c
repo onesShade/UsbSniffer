@@ -1,7 +1,6 @@
 #include "renderer.h"
 
 #include <ncurses.h>
-#include <string.h>
 #include "dispayList.h"
 #include "globals.h"
 #include "util.h"
@@ -42,25 +41,7 @@ void draw_right_window() {
 
 void draw_bottom_window() {
     werase(bottom_win);
-    int x = -16;
-    if(selection_lw.window == device_list) {
-        if (is_storage_device(selection_lw.device_name)) {
-            mvwprintw(bottom_win, 0, x += 16, "F2 - TEST");
-        }
-    }
-
-    if(selection_lw.window == storage_test_settings) {
-        mvwprintw(bottom_win, 0, x += 16, "M - MOUNT P.");
-        mvwprintw(bottom_win, 0, x += 16, "V - TEST MODE");
-        mvwprintw(bottom_win, 0, x += 16, "B - FILE SIZE");
-        mvwprintw(bottom_win, 0, x += 16, "N - PASSES");
-        if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
-            mvwprintw(bottom_win, 0, x += 16, "L - BLOCK");
-        }
-    }
-
-    mvwprintw(bottom_win, 0, x += 16, "Q - BACK");
-    mvwprintw(bottom_win, 0, x += 16, "F10 - EXIT");
+    dl_draw(bottom_line_dl, bottom_win, DLRP_NONE);
     wrefresh(bottom_win);
 }
 
@@ -94,12 +75,11 @@ void draw_popup_window() {
             dl_draw(test_block_size_sel_dl, popup_win, DLRP_NONE);
 
             mvwprintw(popup_win, test_passes_sel_dl->y + 6, test_passes_sel_dl->x, "%s", testPropsStr);
-        }
-            break;
+        } break;
+        case storage_test_results:
         case storage_test_run: {
             dl_draw(test_screen_dl, popup_win, DLRP_NONE);
-        }
-            break;
+        } break;
         default:
             break;
     }

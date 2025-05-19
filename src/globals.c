@@ -19,33 +19,10 @@ DispayList* test_block_size_sel_dl;
 DispayList* test_passes_sel_dl;
 DispayList* test_mode_sel_dl;
 DispayList* test_screen_dl;
+DispayList* bottom_line_dl;
 
 int update_cycle_counter;
 char is_open;
-
-void update_sel_dls() {
-    const char* passes_n[] = {"0001", "0003", "0005", "0010", "0025", "0100","0500",NULL};
-    const char* passes_n_rand[] = {"0100", "0250", "0500", "1000", "2000", "5000","10000",NULL};
-
-    dl_clear(test_passes_sel_dl);
-    dl_clear(test_passes_sel_dl);
-
-    dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "passes: "); 
-    if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
-        for (int i = 0; passes_n_rand[i]; i++) {
-            dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n_rand[i]);
-        }
-        test_block_size_sel_dl->invisible = FALSE;
-    } else {
-        for (int i = 0; passes_n[i]; i++) {
-            dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n[i]);
-        }
-        test_block_size_sel_dl->invisible = TRUE;
-    }
-    dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "TIMES");
-    dl_reset_sel_pos(test_passes_sel_dl);
-
-}
 
 void init_globals() {
     is_open = TRUE;
@@ -54,15 +31,21 @@ void init_globals() {
     right_win = NULL;
     bottom_win = NULL;
     popup_win = NULL;
-    devices_dl = dl_init(TRUE, FALSE, 1, 1);
-    atr_dl = dl_init(FALSE, FALSE, 1, 1);
 
-    mount_point_dl = dl_init(TRUE, FALSE, 1, 1);
-    test_mode_sel_dl = dl_init(TRUE, 8, 4, 1);
-    test_size_sel_dl = dl_init(TRUE, 8, 4, 1);
-    test_passes_sel_dl = dl_init(TRUE, 8, 4, 1);
-    test_block_size_sel_dl = dl_init(TRUE, 8, 4, 1);
-    test_screen_dl = dl_init(FALSE, 0, 1, 1);
+    selection_lw.device_name[0] = '\0';
+
+    devices_dl = dl_init(DLP_SELECTABLE, 1, 1);
+    atr_dl = dl_init(DLP_NONE, 1, 1);
+
+    bottom_line_dl = dl_init(DLP_HORIZONTAL, 0, 0);
+    bottom_line_dl->horizontal_shift = 16;
+
+    mount_point_dl = dl_init(DLP_SELECTABLE, 1, 1);
+    test_mode_sel_dl = dl_init( DLP_HORIZONTAL | DLP_SELECTABLE, 4, 1);
+    test_size_sel_dl = dl_init(DLP_HORIZONTAL | DLP_SELECTABLE, 4, 1);
+    test_passes_sel_dl = dl_init(DLP_HORIZONTAL | DLP_SELECTABLE, 4, 1);
+    test_block_size_sel_dl = dl_init(DLP_HORIZONTAL |DLP_SELECTABLE , 4, 1);
+    test_screen_dl = dl_init(DLP_NONE, 1, 1);
 
     const char* mode_str[] = {"WS", "RS", "RR", NULL};
     dl_add_entry(test_mode_sel_dl, DLEP_UNSELECTABLE, "mode:");

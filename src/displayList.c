@@ -12,24 +12,33 @@
 #include <string.h>
 #include <ctype.h>
 
-DispayList* dl_init(const char selectable, const char horizontal_shift, const int x, const int y) {
+DispayList* dl_init(DLPe dlp, const int x, const int y) {
     DispayList* dl = malloc(sizeof(DispayList));
-    dl->selectable = selectable;
+
+    dl->dlp.selectable = (dlp & DLP_SELECTABLE) ? 1 : 0;
+    dl->dlp.invisible  = (dlp & DLP_INVISIBLE)  ? 1 : 0;
+    dl->dlp.horizontal = (dlp & DLP_HORIZONTAL) ? 1 : 0;
+
     dl->selected = 0;
     dl->x = x;
     dl->y = y;
-    dl->horizontal_shift = horizontal_shift;
-    dl->invisible = FALSE;
+
+    if (dl->dlp.horizontal) {
+        dl->horizontal_shift = DEFAULT_HORIZONTAL_SHIFT;
+    } else {
+        dl->horizontal_shift = 0;
+    }
+
     dl->entryes = vector_init(sizeof(DLE), 16);
     return dl;
 }
 
 int dl_iterate(DispayList* dl, int move) {
-    if(!dl->entryes->size || dl->invisible) {
+    if(!dl->entryes->size || dl->dlp.invisible) {
         return 0;
     }
 
-    if((move != 1 && move != -1) || !dl->selectable) {
+    if((move != 1 && move != -1) || !dl->dlp.selectable) {
         log_message("dl_iterate exception");
         return 0;
     }
@@ -70,12 +79,12 @@ DLE* dl_add_entry(DispayList* dl, DLEPe dlep, const char *format, ...) {
 }
 
 void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp) {
-    if (dl->invisible) {
+    if (dl->dlp.invisible) {
         return;
     }
 
     const DLRP dlr = *((const DLRP*)&dlrp);
-    if (!dl->horizontal_shift) {
+    if (!dl->dlp.horizontal) {
         for(size_t line = 0; line < dl->entryes->size; line++) {
 
             int x = dl->x;
@@ -87,7 +96,7 @@ void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp) {
                 x = getmaxx(win) / 2 - strnlen((const char*)vector_at(dl->entryes, line), MAX_READ) / 2;
             }
     
-            if (dl->selectable && line == dl->selected && !dlr.hide_selection) {
+            if (dl->dlp.selectable && line == dl->selected && !dlr.hide_selection) {
                 wattron(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
                 mvwprintw(win, y, x, "%s", dle->body);
                 wattroff(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
@@ -107,7 +116,7 @@ void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp) {
                 x = getmaxx(win) / 2 - strnlen((const char*)vector_at(dl->entryes, col), MAX_READ) / 2;
             }
     
-            if (dl->selectable && col == dl->selected && !dlr.hide_selection) {
+            if (dl->dlp.selectable && col == dl->selected && !dlr.hide_selection) {
                 wattron(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
                 mvwprintw(win, y, x, "%s", dle->body);
                 wattroff(win, COLOR_PAIR(SELECTED_TEXT_COLOR) | A_REVERSE);
@@ -119,7 +128,7 @@ void dl_draw(const DispayList* dl, WINDOW* win, const DLRPe dlrp) {
 }
 
 char* dl_get_selected(DispayList* dl) {
-    if(!dl->selectable) {   
+    if(!dl->dlp.selectable) {   
         return NULL;
     }
     if(!dl->entryes->size) {
@@ -173,8 +182,8 @@ void dl_sort_natural(DispayList* dl) {
 }
 
 void dl_reset_sel_pos(DispayList* dl) {
-    if (!dl->selectable)
-        dl->selectable = TRUE;
+    if (!dl->dlp.selectable)
+        dl->dlp.selectable = true;
 
     if(!dl->entryes->size) {
         return;
@@ -190,6 +199,6 @@ void dl_reset_sel_pos(DispayList* dl) {
     }
 
     if(!dl_iterate(dl, +1)) {
-        dl->selectable = false;
+        dl->dlp.selectable = false;
     }
 }

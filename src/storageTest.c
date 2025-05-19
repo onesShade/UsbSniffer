@@ -336,7 +336,8 @@ void run_general_test(TestMode tm) {
     dl_add_entry(test_screen_dl, DLEP_NONE, "Press [Q] to exit...");
     draw_all_windows();        
     
-    while (selection_lw.window == storage_test_run) {
+    set_current_window(storage_test_results);
+    while (selection_lw.window == storage_test_results) {
         int key = getch();
         update_keys(key);
         draw_all_windows();      
@@ -346,13 +347,12 @@ void run_general_test(TestMode tm) {
     if (unlink(file_path)) {
         log_message("Failed to delete test file: %s", strerror(errno));
     }
-
 }
 
 void update_st_test_settings(int key) {
     dl_reset_sel_pos(mount_point_dl);
     if (key == 'q') {
-        selection_lw.window = device_list;
+        set_current_window(device_list);
     }
     if (key == 'm') {
         dl_iterate(mount_point_dl, +1);
@@ -373,12 +373,10 @@ void update_st_test_settings(int key) {
     }
 
     if (key == '\n') {
-        selection_lw.window = storage_test_run;
+        set_current_window(storage_test_run);
         dl_clear(test_screen_dl);
 
-
         TestMode tm = TEST_NONE;
-
         if (strncmp("WS", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
             tm = WRITE_SPEED;
         }
@@ -397,8 +395,7 @@ void update_st_test_settings(int key) {
         } else {
             log_message("Test selection failed. test_mode_sel_dl = %s", dl_get_selected(test_mode_sel_dl));
         }
-        
-        selection_lw.window = device_list;
+        set_current_window(device_list);
     }
     set_test_props();
 }

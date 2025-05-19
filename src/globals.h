@@ -4,11 +4,13 @@
 #include <ncurses.h>
 #include "defines.h"
 #include "dispayList.h"
+#include <linux/limits.h>
 
 typedef enum {
     device_list,
     storage_test_settings,
-    storage_test_run
+    storage_test_run,
+    storage_test_results,
 } Window;
 
 typedef struct {
@@ -35,6 +37,7 @@ extern DispayList* test_block_size_sel_dl;
 extern DispayList* test_passes_sel_dl;
 extern DispayList* test_mode_sel_dl;
 extern DispayList* test_screen_dl;
+extern DispayList* bottom_line_dl;
 
 void update_sel_dls();
 

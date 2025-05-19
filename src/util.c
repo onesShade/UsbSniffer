@@ -1,7 +1,7 @@
-#include <linux/limits.h>
 #define _POSIX_C_SOURCE 199309L 
 #define _GNU_SOURCE
 
+#include <linux/limits.h>
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
@@ -61,6 +61,9 @@ int is_usb_device(const char *name) {
 }
 
 int is_storage_device(const char *devpath) {
+    if (!devpath)
+        return false;
+
     char path[PATH_MAX];
     char buffer[MAX_READ];
     char iface_path[PATH_MAX];
@@ -84,13 +87,13 @@ int is_storage_device(const char *devpath) {
                 read_usb_attribute(iface_path, buffer, sizeof(buffer));
                 if (strstr("08", buffer)) {
                     closedir(dir);
-                    return 1;
+                    return true;
                 }
             }
         }
         if (dir) closedir(dir);
     }
-    return 0;    
+    return false;    
 }
 
 void init_ncurses() {

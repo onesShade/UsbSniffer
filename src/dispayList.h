@@ -26,11 +26,24 @@ typedef enum {
 } DLRPe;
 
 typedef struct {
+    char selectable : 1;
+    char invisible  : 1;
+    char horizontal : 1;
+} DLP;
+
+
+typedef enum {
+    DLP_NONE = 0,
+    DLP_SELECTABLE = 1,
+    DLP_INVISIBLE  = 2,
+    DLP_HORIZONTAL = 4,
+} DLPe;
+
+typedef struct {
     Vector* entryes;
+    DLP dlp;
     size_t selected;
-    char selectable;
-    char invisible;
-    char horizontal_shift;
+    int horizontal_shift;
     int x;
     int y;
 } DispayList;
@@ -40,7 +53,8 @@ typedef struct {
     DLEP prop;
 } DLE;   
 
-DispayList* dl_init(const char selectable, const char horizontal_shift, const int x, const int y);
+
+DispayList* dl_init(DLPe dlp, const int x, const int y);
 
 void dl_free(DispayList* dl);
 

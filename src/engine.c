@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #define _POSIX_C_SOURCE 200809L
 
 #include "engine.h"
@@ -7,7 +8,38 @@
 #include "fileSystem.h"
 #include <string.h>
 
+void update_bottom_line_dl() {
+    dl_clear(bottom_line_dl);
+
+    if (selection_lw.window != storage_test_results) {
+        dl_add_entry(bottom_line_dl, DLEP_NONE, "F10 - EXIT");
+    } else {
+        dl_add_entry(bottom_line_dl, DLEP_NONE, "Q - BACK");
+    }
+
+    log_message("%s", selection_lw.device_name);
+    log_message("%d", devices_dl->entryes->size);
+
+    if(selection_lw.window == device_list) {
+        if (is_storage_device(selection_lw.device_name) && devices_dl->entryes->size) {
+            dl_add_entry(bottom_line_dl, DLEP_NONE, "F2 - TEST");
+        }
+    }   
+
+    if(selection_lw.window == storage_test_settings) {
+        dl_add_entry(bottom_line_dl, DLEP_NONE, "Q - BACK");
+        dl_add_entry(bottom_line_dl, DLEP_NONE, "V - TEST");
+        dl_add_entry(bottom_line_dl, DLEP_NONE, "M - MOUNT P.");
+        dl_add_entry(bottom_line_dl, DLEP_NONE, "B - FILE SIZE");
+        dl_add_entry(bottom_line_dl, DLEP_NONE, "N - PASSES");
+         if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
+            dl_add_entry(bottom_line_dl, DLEP_NONE, "L - BLOCK");
+        }
+    }
+}
+
 void update_keys(int key) { 
+    update_bottom_line_dl();
     if (key == KEY_F(10)) {
         is_open = FALSE;
     }
@@ -23,12 +55,14 @@ void update_keys(int key) {
     switch (selection_lw.window) {
         case device_list: {
             if (key == KEY_DOWN) {
-            dl_iterate(devices_dl, +1);   
-            update_cycle_counter = 0;
+                dl_iterate(devices_dl, +1);   
+                update_cycle_counter = 0;
+                update_bottom_line_dl();
             }
             if (key == KEY_UP) {
                 dl_iterate(devices_dl, -1);
                 update_cycle_counter = 0;
+                update_bottom_line_dl();
             }
             
             if (key == 'q') {
@@ -36,18 +70,20 @@ void update_keys(int key) {
             }
 
             if (key == KEY_F(2) && is_storage_device(selection_lw.device_name)) {
-                selection_lw.window = storage_test_settings;
+                set_current_window(storage_test_settings);
                 set_test_props();
             }
         } break;
         case storage_test_settings: {
             update_st_test_settings(key);
         } break;
-        case storage_test_run: {
+        case storage_test_results: {
             if (key == 'q') {
-                selection_lw.window = device_list;
+                set_current_window(device_list);
             }
         } break;
+        case storage_test_run: 
+            break;
     }
 }
 
@@ -91,7 +127,6 @@ int print_attribute_value(const char* dir,const Atr_Print_arg arg, DispayList *d
          arg.print_prefix, buffer, arg.print_postfix ? arg.print_postfix : "");
     return 1;
 }
-
 
 void update_mount_points() {
     dl_clear(mount_point_dl);
@@ -220,6 +255,34 @@ void update_attributes() {
         update_mount_points(); 
     }
     box(right_win, 0, 0);
+}
+
+void update_sel_dls() {
+    const char* passes_n[] = {"0001", "0003", "0005", "0010", "0025", "0100","0500",NULL};
+    const char* passes_n_rand[] = {"0100", "0250", "0500", "1000", "2000", "5000","10000",NULL};
+
+    dl_clear(test_passes_sel_dl);
+    dl_clear(test_passes_sel_dl);
+
+    dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "passes: "); 
+    if (strncmp("RR", dl_get_selected(test_mode_sel_dl), MAX_READ) == 0) {
+        for (int i = 0; passes_n_rand[i]; i++) {
+            dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n_rand[i]);
+        }
+        test_block_size_sel_dl->dlp.invisible = false;
+    } else {
+        for (int i = 0; passes_n[i]; i++) {
+            dl_add_entry(test_passes_sel_dl, DLEP_NONE, passes_n[i]);
+        }
+        test_block_size_sel_dl->dlp.invisible = true;
+    }
+    dl_add_entry(test_passes_sel_dl, DLEP_UNSELECTABLE, "TIMES");
+    dl_reset_sel_pos(test_passes_sel_dl);
+}
+
+void set_current_window(Window win) {
+    selection_lw.window = win;
+    update_bottom_line_dl();
 }
 
 void update_all_windows() {

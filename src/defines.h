@@ -11,5 +11,4 @@
 #define MAIN_LOOP_SLEEP_TIME_MS 50
 #define CICLES_TO_UPDATE 20
 #define MAX_MOUNT_POINTS 16
-
-#include <linux/limits.h>
+#define DEFAULT_HORIZONTAL_SHIFT 8

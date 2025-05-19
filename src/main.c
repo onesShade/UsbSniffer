@@ -8,7 +8,7 @@ int main() {
     init_ncurses();
     init_globals();
 
-    selection_lw.window = device_list;
+    set_current_window(device_list);
     while (is_open) {
         int key = getch();
         update_keys(key);
