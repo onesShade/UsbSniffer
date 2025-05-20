@@ -254,7 +254,6 @@ void update_attributes() {
         dl_add_entry(atr_dl, DLEP_NONE, "Block name: %s", selection.block_name);
         update_mount_points(); 
     }
-    box(right_win, 0, 0);
 }
 
 void update_sel_dls() {
