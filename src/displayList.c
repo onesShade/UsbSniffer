@@ -2,15 +2,16 @@
 #define _GNU_SOURCE
 
 #include <stddef.h>
-#include "dispayList.h"
-#include "util.h"
-#include "vector.h"
 #include <linux/limits.h>
 #include <ncurses.h>
 #include <stdlib.h>
-#include "defines.h"
 #include <string.h>
 #include <ctype.h>
+
+#include "../include/defines.h"
+#include "../include/dispayList.h"
+#include "../include/util.h"
+#include "../include/vector.h"
 
 DispayList* dl_init(DLPe dlp, const int x, const int y) {
     DispayList* dl = malloc(sizeof(DispayList));

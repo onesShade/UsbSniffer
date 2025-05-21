@@ -1,12 +1,13 @@
-#include <linux/limits.h>
 #define _POSIX_C_SOURCE 200809L
 
-#include "engine.h"
-#include "globals.h"
-#include "util.h"
-#include "storageTest.h"
-#include "fileSystem.h"
+#include <linux/limits.h>
 #include <string.h>
+
+#include "../include/engine.h"
+#include "../include/globals.h"
+#include "../include/util.h"
+#include "../include/storageTest.h"
+#include "../include/fileSystem.h"
 
 void update_bottom_line_dl() {
     dl_clear(bottom_line_dl);
@@ -16,9 +17,6 @@ void update_bottom_line_dl() {
     } else {
         dl_add_entry(bottom_line_dl, DLEP_NONE, "Q - BACK");
     }
-
-    log_message("%s", selection.device_name);
-    log_message("%d", devices_dl->entryes->size);
 
     if(selection.window == device_list) {
         if (is_storage_device(selection.device_name) && devices_dl->entryes->size) {

@@ -15,9 +15,9 @@
 #include <limits.h>
 #include <ncurses.h>
 
-#include "fileSystem.h"
-#include "util.h"
-#include "defines.h"
+#include "../include/fileSystem.h"
+#include "../include/util.h"
+#include "../include/defines.h"
 
 int open_dir(DIR **dir, const char *path) {
     #ifdef DEBUG

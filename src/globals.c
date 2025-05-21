@@ -1,8 +1,8 @@
-#include "globals.h"
-#include "dispayList.h"
 #include <ncurses.h>
 #include <stdbool.h>
-#include <string.h>
+
+#include "../include/globals.h"
+#include "../include/dispayList.h"
 
 Selection selection;
 

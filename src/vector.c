@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util.h"
-#include "vector.h"
-#include "defines.h"
+#include "../include/util.h"
+#include "../include/vector.h"
+#include "../include/defines.h"
 
 Vector* vector_init(size_t elem_size, size_t initial_size) {
     Vector* v = malloc(sizeof(Vector));

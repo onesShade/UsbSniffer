@@ -1,7 +1,7 @@
-#include "util.h"
-#include "globals.h"
-#include "renderer.h"
-#include "engine.h"
+#include "../include/util.h"
+#include "../include/globals.h"
+#include "../include/renderer.h"
+#include "../include/engine.h"
 
 int main() {
     init_log();

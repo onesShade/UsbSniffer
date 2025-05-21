@@ -1,10 +1,11 @@
-#include "renderer.h"
-
 #include <ncurses.h>
-#include "dispayList.h"
-#include "globals.h"
-#include "util.h"
-#include "storageTest.h"
+
+#include "../include/renderer.h"
+#include "../include/dispayList.h"
+#include "../include/globals.h"
+#include "../include/util.h"
+#include "../include/storageTest.h"
+
 
 void draw_left_window();
 void draw_right_window();

@@ -16,9 +16,10 @@
 #include <ncurses.h>
 #include <string.h>
 #include <ctype.h>
-#include "util.h"
-#include "defines.h"
-#include "fileSystem.h"
+
+#include "../include/util.h"
+#include "../include/defines.h"
+#include "../include/fileSystem.h"
 
 void init_log() {
     unlink(LOG_FILE);
@@ -30,9 +31,10 @@ void log_message(const char *format, ...) {
     if (!log_file) return;
     
     time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
+    struct tm tm_info;
+    localtime_r(&now, &tm_info);
     char time_buf[20];
-    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info);
+    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", &tm_info);
     
     fprintf(log_file, "[%s] ", time_buf);
     

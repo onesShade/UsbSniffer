@@ -1,12 +1,7 @@
 #define _POSIX_C_SOURCE 199309L 
 #define _GNU_SOURCE
 
-#include "util.h"
 #include <linux/limits.h>
-
-#include "dispayList.h"
-#include "storageTest.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -23,11 +18,13 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "renderer.h"
-#include "engine.h"
-
-#include "defines.h"
-#include "globals.h"
+#include "../include/util.h"
+#include "../include/dispayList.h"
+#include "../include/storageTest.h"
+#include "../include/renderer.h"
+#include "../include/engine.h"
+#include "../include/defines.h"
+#include "../include/globals.h"
 
 #define BAR_MAX_LEN 256
 
