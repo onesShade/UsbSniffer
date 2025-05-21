@@ -80,20 +80,22 @@ int is_storage_device(const char *devpath) {
     struct dirent *ent;
     snprintf(path, sizeof(path), "%s%s", SYSFS_USB_DEVICES, devpath);
     
-    if ((dir = opendir(path)) != NULL) {
-        while ((ent = readdir(dir)) != NULL) {
-            if (strncmp(ent->d_name, devpath, strnlen(devpath, PATH_MAX)) == 0 && 
-                strchr(ent->d_name, ':') != NULL) {
-                
-                snprintf(iface_path, sizeof(iface_path), "%s/%s/bInterfaceClass", path, ent->d_name);
-                read_usb_attribute(iface_path, buffer, sizeof(buffer));
-                if (strstr("08", buffer)) {
-                    closedir(dir);
-                    return true;
-                }
+    if ((dir = opendir(path)) == NULL)
+        return false; 
+    while ((ent = readdir(dir)) != NULL) {
+        if (strncmp(ent->d_name, devpath, strnlen(devpath, PATH_MAX)) == 0 && 
+            strchr(ent->d_name, ':') != NULL) {
+            
+            snprintf(iface_path, sizeof(iface_path), "%s/%s/bInterfaceClass", path, ent->d_name);
+            read_usb_attribute(iface_path, buffer, sizeof(buffer));
+            if (strstr("08", buffer)) {
+                closedir(dir);
+                return true;
             }
         }
-        if (dir) closedir(dir);
+    }
+    if (dir) {
+        closedir(dir);
     }
     return false;    
 }

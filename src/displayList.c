@@ -149,8 +149,8 @@ void dl_set_pos(DispayList* dl, int x, int y) {
 }
 
 int string_compare_dle(const void *a, const void *b) {
-    const DLE* f = (DLE*)a;
-    const DLE* s = (DLE*)b;
+    const DLE* f = (const DLE*)a;
+    const DLE* s = (const DLE*)b;
     return str_compare_fun(f->body, s->body);
 }
 

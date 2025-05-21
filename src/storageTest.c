@@ -141,7 +141,7 @@ int test_read(const char* path, char* out, size_t total_size) {
     return 1;
 }
 
-void run_ws_test(char* file_path, char* buffer, size_t total_size) {
+void run_ws_test(const char* file_path, char* buffer, size_t total_size) {
     double elapsed_sec;
     struct timespec start, end;
     dl_add_entry(test_screen_dl, DLEP_NONE, "");
@@ -170,7 +170,7 @@ void run_ws_test(char* file_path, char* buffer, size_t total_size) {
     draw_all_windows();        
 }
 
-void run_rs_test(char* file_path, char* buffer, size_t total_size, char* out_data) {
+void run_rs_test(const char* file_path, char* buffer, size_t total_size, char* out_data) {
     struct timespec start, end;
     double elapsed_sec;
 
@@ -203,7 +203,7 @@ void run_rs_test(char* file_path, char* buffer, size_t total_size, char* out_dat
     draw_all_windows();   
 }
 
-void run_random_read_test(char* file_path, char* buffer, size_t total_size) {
+void run_random_read_test(const char* file_path, char* buffer, size_t total_size) {
     void* aligned_buf;
     if (posix_memalign(&aligned_buf, 4096, testProps.block_size)) {
         log_message("Memory alignment failed", strerror(errno));
@@ -268,7 +268,6 @@ void run_general_test(TestMode tm) {
     char file_path[PATH_MAX];
 
     snprintf(file_path, sizeof(file_path), "%s/%s", mount_point, TEST_FILE_NAME);
-    struct timespec start, end;
 
     dl_add_entry(test_screen_dl, DLEP_CENTERED, "RUNNING %s", TestModeStr[tm]);
 
@@ -339,7 +338,7 @@ void run_general_test(TestMode tm) {
         update_keys(key);
         draw_all_windows();      
         msleep(MAIN_LOOP_SLEEP_TIME_MS);
-    };
+    }
 
     if (unlink(file_path)) {
         log_message("Failed to delete test file: %s", strerror(errno));

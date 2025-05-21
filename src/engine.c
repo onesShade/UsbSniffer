@@ -146,15 +146,14 @@ void update_mount_points() {
     while (fgets(buffer, sizeof(buffer), mounts) && mount_count < MAX_MOUNT_POINTS) {
         if (strcspn(buffer, "\n") < strnlen(buffer, MAX_READ) &&
             strstr(buffer, selection.block_name) != NULL) {
-
                 s_strcpy(mount_buffers[mount_count], buffer, PATH_MAX);
                 mount_count++;
         }
     }
-    if(mount_count)
+    if (mount_count)
         qsort(mount_buffers, mount_count, sizeof(mount_buffers[0]), str_compare_second_substr_fun);
 
-    for(size_t mp = 0; mp < mount_count; mp++) {
+    for (size_t mp = 0; mp < mount_count; mp++) {
         char block_path[MAX_READ];
         char path_mount[PATH_MAX];
         char file_system[MAX_READ];
