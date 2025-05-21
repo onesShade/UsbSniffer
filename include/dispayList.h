@@ -26,9 +26,9 @@ typedef enum {
 } DLRPe;
 
 typedef struct {
-    char selectable : 1;
-    char invisible  : 1;
-    char horizontal : 1;
+    unsigned char selectable : 1;
+    unsigned char invisible  : 1;
+    unsigned char horizontal : 1;
 } DLP;
 
 
