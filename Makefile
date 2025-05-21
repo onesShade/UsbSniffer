@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -pedantic -Wno-unused-parameter -Wno-unused-variable -Og -fsanitize=address -g
+CFLAGS = -Wall -Wextra -std=c11 -pedantic -Wno-unused-parameter -Wno-unused-variable -Og -fsanitize=address -g -Iinclude
 LDFLAGS = -lrt -lncurses -fsanitize=address -Og -g
 
 # Directory structure
